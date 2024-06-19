@@ -2,7 +2,8 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Links Status</title>
+    <title>友链检测</title>
+    <link rel="icon" href="/images/avatar.png" type="image/x-icon">
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -57,10 +58,21 @@
             font-size: 24px;
             color: #000000;
         }
+        .description {
+            margin-bottom: 30px;
+            padding: 30px;
+            font-size: 18px;
+            color: #333;
+            text-align: center;
+        }
     </style>
 </head>
 <body>
     <div class="container">
+        <div class="description">
+            <p>本页面用于自动检查和展示清羽飞扬站点友链的可访问性。</p>
+            <p>链接每隔一天自动更新一次。由于在GitHub Actions环境中运行，结果可能并不完全准确。对于被标记为不可访问的链接，我会进行手动检测。如果链接确实无法访问，我将尝试联系站长。如果一周内无法联系上，将会下架该友链。</p>
+        </div>
         <h2 class="card-list-title">不可访问链接</h2>
         <div id="inaccessibleLinks" class="card-list"></div>
         <h2 class="card-list-title">可访问链接</h2>

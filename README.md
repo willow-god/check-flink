@@ -1,4 +1,6 @@
-# 链接检查项目
+![](/images/cover.png)
+
+# 友情链接自动检查项目
 
 这个项目旨在自动检查从互联网上托管的JSON文件中的链接的可访问性。它利用GitHub Actions来定期调度检查，并将结果输出为JSON文件，可以部署到如Vercel等平台以便于访问。该项目基于并改进了[butterfly-check-links](https://github.com/shangskr/butterfly-check-links.git)项目。
 
@@ -76,10 +78,13 @@ jobs:
         git config --global user.name "GitHub Actions"
 
     - name: Commit and push generated JSON file
+      env:
+        PAT_TOKEN: ${{ secrets.PAT_TOKEN }}
       run: |
-        git add result.json
-        git commit -m "每日更新" || echo "No changes to commit"
-        git push https://x-access-token:${{ secrets.PAT_TOKEN }}@github.com/${{ github.repository }} main
+        git add .
+        git commit -m "每日更新"
+        git push https://x-access-token:${{ secrets.PAT_TOKEN }}@github.com/${{ github.repository }}.git main
+
 ```
 
 ### 添加GitHub Secrets
@@ -92,6 +97,16 @@ jobs:
 4. 在“Name”字段中输入`PAT_TOKEN`。
 5. 在“Secret”字段中粘贴你的Personal Access Token（个人访问令牌）。
 6. 点击“Add secret”按钮保存。
+
+### 配置仓库权限
+
+在GitHub仓库的设置中，确保Actions有写权限，步骤如下：
+
+1. 打开你的GitHub仓库，点击右上角的“Settings”。
+2. 在左侧栏中找到并点击“Actions”。
+3. 选择“General”。
+4. 在“Workflow permissions”部分，选择“Read and write permissions”。
+5. 点击“Save”按钮保存设置。
 
 ### 链接检查脚本说明
 
