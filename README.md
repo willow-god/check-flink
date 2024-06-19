@@ -2,6 +2,8 @@
 
 # 友情链接自动检查项目
 
+[示例页面](https://check.zeabur.app)
+
 这个项目旨在自动检查从互联网上托管的JSON文件中的链接的可访问性。它利用GitHub Actions来定期调度检查，并将结果输出为JSON文件，可以部署到如Vercel等平台以便于访问。该项目基于并改进了[butterfly-check-links](https://github.com/shangskr/butterfly-check-links.git)项目。
 
 ## 功能
@@ -98,6 +100,10 @@ jobs:
 5. 在“Secret”字段中粘贴你的Personal Access Token（个人访问令牌）。
 6. 点击“Add secret”按钮保存。
 
+其中`PAT_TOKEN`请在右上角设置，开发者选项自行生成：
+
+![](/images/PAT.png)
+
 ### 配置仓库权限
 
 在GitHub仓库的设置中，确保Actions有写权限，步骤如下：
@@ -108,7 +114,109 @@ jobs:
 4. 在“Workflow permissions”部分，选择“Read and write permissions”。
 5. 点击“Save”按钮保存设置。
 
-### 链接检查脚本说明
+### 部署到 Vercel 或 Zeabur
+
+在 Vercel 或 Zeabur 选择对应仓库，按照以下步骤进行操作：
+
+1. **登录 Vercel 或 Zeabur**：
+   - 如果还没有账户，请先注册一个 Vercel 或 Zeabur 账户。
+   - 登录后进入仪表板。
+
+2. **导入 GitHub 仓库**：
+   - 点击“New Project”或“Import Project”按钮。
+   - 选择“Import Git Repository”。
+   - 连接到您的 GitHub 账户，并选择该链接检查项目的仓库。
+
+3. **配置项目**：
+   - 确保选择正确的分支（如 `main`）。
+   - 对于 Vercel，在“Build and Output Settings”中，确保 `output.json` 文件在构建输出目录中。
+
+4. **部署项目**：
+   - 点击“Deploy”按钮开始部署。
+   - 部署完成后，Vercel 或 Zeabur 会生成一个 URL，您可以使用这个 URL 访问部署的网页。
+
+### 通过 API 获取数据
+
+该项目还生成了一个 JSON 文件，通过该文件可以获取最新的链接检查结果。您可以使用任何支持 HTTP 请求的编程语言或工具来获取此 JSON 数据。
+
+API地址如下（用本站部署的作为示例）：
+
+```txt
+https://check.zeabur.app/result.json
+```
+
+
+
+以下是通过`Javascript`获取无法访问链接数据的简单页面示例，具体请自行编写：
+
+```html
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>友链检测</title>
+</head>
+<body>
+    <div id="inaccessibleLinksContainer"></div>
+
+    <script>
+        async function fetchInaccessibleLinks() {
+            const jsonUrl = 'https://your-deployed-url.com/result.json';
+            try {
+                const response = await fetch(jsonUrl);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const data = await response.json();
+                displayInaccessibleLinks(data.inaccessible_links);
+            } catch (error) {
+                console.error("Fetch error: ", error);
+            }
+        }
+
+        function displayInaccessibleLinks(links) {
+            const container = document.getElementById('inaccessibleLinksContainer');
+            container.innerHTML = ''; // 清空容器
+            links.forEach(link => {
+                const linkElement = document.createElement('p');
+                linkElement.textContent = link;
+                container.appendChild(linkElement);
+            });
+        }
+
+        fetchInaccessibleLinks();
+    </script>
+</body>
+</html>
+
+```
+
+### JSON 结构介绍
+
+链接检查结果以 JSON 格式存储，主要包含以下字段：
+
+- `accessible_links`: 可访问的链接列表。
+- `inaccessible_links`: 不可访问的链接列表。
+- `timestamp`: 生成检查结果的时间戳。
+
+以下是一个示例 JSON 文件结构：
+
+```json
+{
+    "accessible_links": [
+        "https://example1.com",
+        "https://example2.com"
+    ],
+    "inaccessible_links": [
+        "https://example3.com",
+        "https://example4.com"
+    ],
+    "timestamp": "2024-06-19T12:34:56"
+}
+```
+
+通过以上文件，你可以自行编篡js代码进行主题适配，这里我不再进行进一步介绍。
 
 #### `test-friend.py`
 
