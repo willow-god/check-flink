@@ -1,0 +1,44 @@
+name: Check Links and Generate JSON
+
+on:
+  push:
+    branches:
+      - main
+  schedule:
+    - cron: '0 1 * * *'  # 每天凌晨一点执行一次
+  workflow_dispatch:
+
+jobs:
+  check_links:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v2
+
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.x'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install requests
+
+    - name: Run Python script to check links and generate JSON
+      run: python test-friend.py
+
+    - name: Ensure file is updated
+      run: touch result.json
+
+    - name: Configure Git
+      run: |
+        git config --global user.email "actions@github.com"
+        git config --global user.name "GitHub Actions"
+
+    - name: Commit and push generated JSON file
+      run: |
+        git add result.json
+        git commit -m "每日更新" || echo "No changes to commit"
+        git push https://x-access-token:${{ secrets.PAT_TOKEN }}@github.com/${{ github.repository }} main
