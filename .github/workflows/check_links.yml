@@ -39,6 +39,6 @@ jobs:
 
     - name: Commit and push generated JSON file
       run: |
-        git add result.json
+        git add .
         git commit -m "每日更新" || echo "No changes to commit"
-        git push https://x-access-token:${{ secrets.PAT_TOKEN }}@github.com/${{ github.repository }} main
+        git push https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }} main
