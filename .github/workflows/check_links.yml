@@ -29,12 +29,18 @@ jobs:
     - name: Run Python script to check links and generate JSON
       run: python test-friend.py
 
+    - name: Ensure file is updated
+      run: touch result.json
+
+    - name: Configure Git
+      run: |
+        git config --global user.email "actions@github.com"
+        git config --global user.name "GitHub Actions"
+
     - name: Commit and push generated JSON file
-      uses: github-actions-x/commit@v2.9
-      with:
-        github-token: ${{ secrets.PAT_TOKEN }}
-        commit-message: "每日更新"
-        files: result.json
-        rebase: 'true'
-        name: github-actions[bot]
-        email: github-actions@noreply.github.com
+      env:
+        PAT_TOKEN: ${{ secrets.PAT_TOKEN }}
+      run: |
+        git add .
+        git commit -m "每日更新"
+        git push https://x-access-token:${{ secrets.PAT_TOKEN }}@github.com/willow-god/check-flink.git main
