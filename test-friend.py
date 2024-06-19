@@ -1,8 +1,8 @@
-# 尝试生成新的测试脚本
 import json
 import requests
 import warnings
 import concurrent.futures
+from datetime import datetime
 
 # 忽略警告信息
 warnings.filterwarnings("ignore", message="Unverified HTTPS request is being made.*")
@@ -47,10 +47,6 @@ else:
 with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
     results = list(executor.map(check_link_accessibility, links))
 
-# 使用ThreadPoolExecutor并发检查多个链接
-with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
-    results = list(executor.map(check_link_accessibility, links))
-
 # 分割可达和不可达的链接
 accessible_results = [result for result in results if result[1] == 1]
 inaccessible_results = [result for result in results if result[1] == -1]
@@ -58,10 +54,14 @@ inaccessible_results = [result for result in results if result[1] == -1]
 accessible_links = [result[0] for result in accessible_results]
 inaccessible_links = [result[0] for result in inaccessible_results]
 
+# 获取当前时间
+current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
 # 将结果写入JSON文件
 output_json_path = './result.json'
 with open(output_json_path, 'w', encoding='utf-8') as file:
     json.dump({
+        'timestamp': current_time,
         'accessible_links': accessible_links,
         'inaccessible_links': inaccessible_links
     }, file, ensure_ascii=False, indent=4)
