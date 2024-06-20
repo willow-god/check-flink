@@ -1,18 +1,20 @@
 ![](/images/cover.png)
 
+---
+
 # 友情链接自动检查项目
 
 [示例页面](https://check.zeabur.app)
 
-这个项目旨在自动检查从互联网上托管的JSON文件中的链接的可访问性。它利用GitHub Actions来定期调度检查，并将结果输出为JSON文件，可以部署到如Vercel等平台以便于访问。该项目基于并改进了[butterfly-check-links](https://github.com/shangskr/butterfly-check-links.git)项目。
+这个项目旨在自动检查从互联网上托管的 JSON 文件中的链接的可访问性。它利用 GitHub Actions 来定期调度检查，并将结果输出为 JSON 文件，可以部署到如 Vercel 等平台以便于访问。该项目基于并改进了 [butterfly-check-links](https://github.com/shangskr/butterfly-check-links.git) 项目。
 
 ## 功能
 
-- 使用GitHub Actions进行自动链接检查
-- 支持使用`HEAD`和`GET`请求进行链接验证
+- 使用 GitHub Actions 进行自动链接检查
+- 支持使用 `HEAD` 和 `GET` 请求进行链接验证
 - 并发处理以提高链接检查效率
-- 结果输出为JSON格式，便于与Web应用集成
-- 使用cron作业进行定时执行
+- 结果输出为 JSON 格式，便于与 Web 应用集成
+- 使用 cron 作业进行定时执行
 
 ## 项目结构
 
@@ -22,22 +24,26 @@
 │   └── workflows
 │       └── check_links.yml
 ├── test-friend.py
+├── test-friend-in-txt.py
 ├── result.json
+├── link.txt
 └── README.md
 ```
 
 ## 文件说明
 
-- `.github/workflows/check_links.yml`: GitHub Actions的工作流配置文件，用于定时执行链接检查脚本。
-- `test-friend.py`: 主链接检查脚本，负责检查链接的可访问性并生成结果。
+- `.github/workflows/check_links.yml`: GitHub Actions 的工作流配置文件，用于定时执行链接检查脚本。
+- `test-friend.py`: 主链接检查脚本，负责检查 JSON 数据中的链接可访问性并生成结果。
+- `test-friend-in-txt.py`: 从 `link.txt` 文件中读取链接并进行可访问性检查，生成结果。
 - `result.json`: 链接检查结果的输出文件。
+- `link.txt`: 存放待检查链接的文本文件。
 - `README.md`: 项目说明文件。
 
 ## 使用说明
 
-### 配置GitHub Actions
+### 配置 GitHub Actions
 
-在项目的GitHub仓库中，创建一个GitHub Actions工作流配置文件（`.github/workflows/check_links.yml`），内容如下：
+在项目的 GitHub 仓库中，创建一个 GitHub Actions 工作流配置文件（`.github/workflows/check_links.yml`），内容如下：
 
 ```yaml
 name: Check Links and Generate JSON
@@ -68,8 +74,11 @@ jobs:
         python -m pip install --upgrade pip
         pip install requests
 
-    - name: Run Python script to check links and generate JSON
+    - name: Run Python script to check links from JSON and generate JSON
       run: python test-friend.py
+
+    - name: Run Python script to check links from TXT and generate JSON
+      run: python test-friend-in-txt.py
 
     - name: Ensure file is updated
       run: touch result.json
@@ -89,26 +98,26 @@ jobs:
 
 ```
 
-### 添加GitHub Secrets
+### 添加 GitHub Secrets
 
-在GitHub仓库的设置中，添加一个名为`PAT_TOKEN`的秘密，步骤如下：
+在 GitHub 仓库的设置中，添加一个名为 `PAT_TOKEN` 的秘密，步骤如下：
 
-1. 打开你的GitHub仓库，点击右上角的“Settings”。
+1. 打开你的 GitHub 仓库，点击右上角的“Settings”。
 2. 在左侧栏中找到并点击“Secrets and variables”，然后选择“Actions”。
 3. 点击“New repository secret”按钮。
-4. 在“Name”字段中输入`PAT_TOKEN`。
-5. 在“Secret”字段中粘贴你的Personal Access Token（个人访问令牌）。
+4. 在“Name”字段中输入 `PAT_TOKEN`。
+5. 在“Secret”字段中粘贴你的 Personal Access Token（个人访问令牌）。
 6. 点击“Add secret”按钮保存。
 
-其中`PAT_TOKEN`请在右上角设置，开发者选项自行生成：
+其中 `PAT_TOKEN` 请在右上角设置，开发者选项自行生成：
 
 ![](/images/PAT.png)
 
 ### 配置仓库权限
 
-在GitHub仓库的设置中，确保Actions有写权限，步骤如下：
+在 GitHub 仓库的设置中，确保 Actions 有写权限，步骤如下：
 
-1. 打开你的GitHub仓库，点击右上角的“Settings”。
+1. 打开你的 GitHub 仓库，点击右上角的“Settings”。
 2. 在左侧栏中找到并点击“Actions”。
 3. 选择“General”。
 4. 在“Workflow permissions”部分，选择“Read and write permissions”。
@@ -139,18 +148,15 @@ jobs:
 
 该项目还生成了一个 JSON 文件，通过该文件可以获取最新的链接检查结果。您可以使用任何支持 HTTP 请求的编程语言或工具来获取此 JSON 数据。
 
-API地址如下（用本站部署的作为示例）：
+API 地址如下（用本站部署的作为示例）：
 
 ```txt
 https://check.zeabur.app/result.json
 ```
 
-
-
-以下是通过`Javascript`获取无法访问链接数据的简单页面示例，具体请自行编写：
+以下是通过 `Javascript` 获取无法访问链接数据的简单页面示例，具体请自行编写：
 
 ```html
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -158,6 +164,7 @@ https://check.zeabur.app/result.json
     <title>友链检测</title>
 </head>
 <body>
+    <h1>不可访问的链接</h1>
     <div id="inaccessibleLinksContainer"></div>
 
     <script>
@@ -180,7 +187,7 @@ https://check.zeabur.app/result.json
             container.innerHTML = ''; // 清空容器
             links.forEach(link => {
                 const linkElement = document.createElement('p');
-                linkElement.textContent = link;
+                linkElement.innerHTML = `<strong>${link.name}:</strong> <a href="${link.link}" target="_blank">${link.link}</a>`;
                 container.appendChild(linkElement);
             });
         }
@@ -189,7 +196,6 @@ https://check.zeabur.app/result.json
     </script>
 </body>
 </html>
-
 ```
 
 ### JSON 结构介绍
@@ -205,33 +211,46 @@ https://check.zeabur.app/result.json
 ```json
 {
     "accessible_links": [
-        "https://example1.com",
-        "https://example2.com"
+        {
+            "name": "清羽飞扬",
+            "link": "https://blog.qyliu.top/"
+        },
+        {
+            "name": "ChrisKim",
+            "link": "https://www.zouht.com/"
+        }
     ],
     "inaccessible_links": [
-        "https://example3.com",
-        "https://example4.com"
+        {
+            "name": "JackieZhu",
+            "link": "https://blog.zhfan.top/"
+        },
+        {
+            "name": "青桔气球",
+            "link": "https://blog.qjqq.cn/"
+        }
     ],
-    "timestamp": "2024-06-19T12:34:56"
+    "accessible_count": 2,
+    "inaccessible_count": 2,
+    "timestamp": "2024-06-20T23:40:15"
 }
 ```
 
-通过以上文件，你可以自行编篡js代码进行主题适配，这里我不再进行进一步介绍。
-
-#### `test-friend.py`
+### `test-friend.py`
 
 该脚本主要执行以下步骤：
 
-1. 忽略HTTPS请求的警告信息。
-2. 发送HTTP请求获取目标JSON数据，并解析其中的链接列表。
-3. 使用`ThreadPoolExecutor`并发检查多个链接的可访问性。
-4. 将可达和不可达的链接分开，并将结果写入`result.json`文件。
+1. 忽略 HTTPS 请求的警告信息。
+2. 发送 HTTP 请求获取目标 JSON 数据，并解析其中的链接列表。
+3. 使用 `ThreadPoolExecutor` 并发检查多个链接的可访问性。
+4. 将可达和不可达的链接分开，并将结果写入 `result.json` 文件。
 
 ```python
 import json
 import requests
 import warnings
 import concurrent.futures
+from datetime import datetime
 
 # 忽略警告信息
 warnings.filterwarnings("ignore", message="Unverified HTTPS request is being made.*")
@@ -240,13 +259,14 @@ warnings.filterwarnings("ignore", message="Unverified HTTPS request is being mad
 user_agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36"
 
 # 检查链接是否可访问的函数
-def check_link_accessibility(link):
+def check_link_accessibility(item):
     headers = {"User-Agent": user_agent}
+    link = item['link']
     try:
         # 发送HEAD请求
         response = requests.head(link, headers=headers, timeout=5)
         if response.status_code == 200:
-            return [link, 1]  # 如果链接可访问，返回链接
+            return [item, 1]  # 如果链接可访问，返回链接
     except requests.RequestException:
         pass  # 如果出现请求异常，不执行任何操作
     
@@ -254,11 +274,11 @@ def check_link_accessibility(link):
         # 如果HEAD请求失败，尝试发送GET请求
         response = requests.get(link, headers=headers, timeout=5)
         if response.status_code == 200:
-            return [link, 1]  # 如果GET请求成功，返回链接
+            return [item, 1]  # 如果GET请求成功，返回链接
     except requests.RequestException:
         pass  # 如果出现请求异常，不执行任何操作
     
-    return [link, -1]  # 如果所有请求都失败，返回-1
+    return [item, -1]  # 如果所有请求都失败，返回-1
 
 # 目标JSON数据的URL
 json_url = 'https://blog.qyliu.top/flink_count.json'
@@ -267,31 +287,119 @@ json_url = 'https://blog.qyliu.top/flink_count.json'
 response = requests.get(json_url)
 if response.status_code == 200:
     data = response.json()  # 解析JSON数据
-    links = [item['link'] for item in data['link_list']]  # 提取所有的链接
+    link_list = data['link_list']  # 提取所有的链接项
 else:
     print(f"Failed to retrieve data, status code: {response.status_code}")
     exit()
 
 # 使用ThreadPoolExecutor并发检查多个链接
 with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
-    results = list(executor.map(check_link_accessibility, links))
+    results = list(executor.map(check_link_accessibility, link_list))
 
 # 分割可达和不可达的链接
-accessible_results = [result for result in results if result[1] == 1]
-inaccessible_results = [result for result in results if result[1] == -1]
-# 从结果列表中提取链接
-accessible_links = [result[0] for result in accessible_results]
-inaccessible_links = [result[0] for result in inaccessible_results]
+accessible_results = [{'name': result[0]['name'], 'link': result[0]['link']} for result in results if result[1] == 1]
+inaccessible_results = [{'name': result[0]['name'], 'link': result[0]['link']} for result in results if result[1] == -1]
+
+# 获取当前时间
+current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+# 统计可访问和不可访问的链接数
+accessible_count = len(accessible_results)
+inaccessible_count = len(inaccessible_results)
 
 # 将结果写入JSON文件
 output_json_path = './result.json'
 with open(output_json_path, 'w', encoding='utf-8') as file:
     json.dump({
-        'accessible_links': accessible_links,
-        'inaccessible_links': inaccessible_links
+        'timestamp': current_time,
+        'accessible_links': accessible_results,
+        'inaccessible_links': inaccessible_results,
+        'accessible_count': accessible_count,
+        'inaccessible_count': inaccessible_count
     }, file, ensure_ascii=False, indent=4)
 
 print(f"检查完成，结果已保存至 '{output_json_path}' 文件。")
 ```
 
-这个项目提供了一种自动化的方式来定期检查链接的可访问性，并将结果以JSON格式输出，便于集成到前端页面。通过使用GitHub Actions，整个流程实现了自动化和可视化，极大地方便了用户对链接的管理和监控。
+### `test-friend-in-txt.py`
+
+该脚本主要执行以下步骤：
+
+1. 忽略 HTTPS 请求的警告信息。
+2. 从 `link.txt` 文件中读取链接列表。
+3. 使用 `ThreadPoolExecutor` 并发检查多个链接的可访问性。
+4. 将可达和不可达的链接分开，并将结果写入 `result.json` 文件。
+
+```python
+import json
+import requests
+import warnings
+import concurrent.futures
+from datetime import datetime
+
+# 忽略警告信息
+warnings.filterwarnings("ignore", message="Unverified HTTPS request is being made.*")
+
+# 用户代理字符串，模仿浏览器
+user_agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36"
+
+# 检查链接是否可访问的函数
+def check_link_accessibility(item):
+    headers = {"User-Agent": user_agent}
+    link = item['link']
+    try:
+        # 发送HEAD请求
+        response = requests.head(link, headers=headers, timeout=5)
+        if response.status_code == 200:
+            return [item, 1]  # 如果链接可访问，返回链接
+    except requests.RequestException:
+        pass  # 如果出现请求异常，不执行任何操作
+    
+    try:
+        # 如果HEAD请求失败，尝试发送GET请求
+        response = requests.get(link, headers=headers, timeout=5)
+        if response.status_code == 200:
+            return [item, 1]  # 如果GET请求成功，返回链接
+    except requests.RequestException:
+        pass  # 如果出现请求异常，不执行任何操作
+    
+    return [item, -1]  # 如果所有请求都失败，返回-1
+
+# 从link.txt中读取链接和名称
+link_list = []
+with open('./link.txt', 'r', encoding='utf-8') as file:
+    for line in file:
+        if line.strip():
+            name, link = line.strip().split(',', 1)
+            link_list.append({'name': name, 'link': link})
+
+# 使用ThreadPoolExecutor并发检查多个链接
+with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
+    results = list(executor.map(check_link_accessibility, link_list))
+
+# 分割可达和不可达的链接
+accessible_results = [{'name': result[0]['name'], 'link': result[0]['link']} for result in results if result[1] == 1]
+inaccessible_results = [{'name': result[0]['name'], 'link': result[0]['link']} for result in results if result[1] == -1]
+
+# 获取当前时间
+current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+# 统计可访问和不可访问的链接数
+accessible_count = len(accessible_results)
+inaccessible_count = len(inaccessible_results)
+
+# 将结果写入JSON文件
+output_json_path = './result.json'
+with open(output_json_path, 'w', encoding='utf-8') as file:
+    json.dump({
+        'timestamp': current_time,
+        'accessible_links': accessible_results,
+        'inaccessible_links': inaccessible_results,
+        'accessible_count': accessible_count,
+        'inaccessible_count': inaccessible_count
+    }, file, ensure_ascii=False, indent=4)
+
+print(f"检查完成，结果已保存至 '{output_json_path}' 文件。")
+```
+
+这个项目提供了一种自动化的方式来定期检查链接的可访问性，并将结果以 JSON 格式输出，便于集成到前端页面。通过使用 GitHub Actions，整个流程实现了自动化和可视化，极大地方便了用户对链接的管理和监控。

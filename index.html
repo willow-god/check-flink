@@ -31,11 +31,16 @@
             flex: 1 1 calc(25% - 20px);
             box-sizing: border-box;
             margin: 10px;
+            transition: box-shadow 0.3s ease-in-out;
+            cursor: pointer;
+        }
+        .card:hover {
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
         }
         .card-title {
             font-size: 20px;
             color: #333;
-            margin-top: 0px;
+            margin-top: 0;
             margin-bottom: 10px;
         }
         .card-link {
@@ -72,6 +77,7 @@
         <div class="description">
             <p>本页面用于自动检查和展示清羽飞扬站点友链的可访问性。</p>
             <p>链接每隔一天自动更新一次。由于在GitHub Actions环境中运行，结果可能并不完全准确。对于被标记为不可访问的链接，我会进行手动检测。如果链接确实无法访问，我将尝试联系站长。如果一周内无法联系上，将会下架该友链。</p>
+            <p id="linkInfo"></p>
         </div>
         <h2 class="card-list-title">不可访问链接</h2>
         <div id="inaccessibleLinks" class="card-list"></div>
@@ -102,14 +108,18 @@
                 const card = document.createElement('div');
                 card.className = 'card';
                 card.innerHTML = `
-                    <h5 class="card-title">网站链接：</h5>
-                    <a href="${link}" class="card-link" target="_blank">${link}</a>
+                    <h5 class="card-title">${link.name}</h5>
+                    <a href="${link.link}" class="card-link" target="_blank">${link.link}</a>
                 `;
+                card.onclick = () => window.open(link.link, '_blank');
                 container.appendChild(card);
             });
         }
 
         fetchJson(jsonUrl).then(data => {
+            document.getElementById('linkInfo').innerHTML = `
+                可访问链接数量：${data.accessible_count}，不可访问链接数量：${data.inaccessible_count}，更新时间：${data.timestamp}
+            `;
             displayLinks(data.inaccessible_links, 'inaccessibleLinks');
             displayLinks(data.accessible_links, 'accessibleLinks');
         });

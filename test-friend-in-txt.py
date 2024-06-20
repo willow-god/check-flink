@@ -32,17 +32,13 @@ def check_link_accessibility(item):
     
     return [item, -1]  # 如果所有请求都失败，返回-1
 
-# 目标JSON数据的URL
-json_url = 'https://blog.qyliu.top/flink_count.json'
-
-# 发送HTTP GET请求获取JSON数据
-response = requests.get(json_url)
-if response.status_code == 200:
-    data = response.json()  # 解析JSON数据
-    link_list = data['link_list']  # 提取所有的链接项
-else:
-    print(f"Failed to retrieve data, status code: {response.status_code}")
-    exit()
+# 从link.txt中读取链接和名称
+link_list = []
+with open('./link.txt', 'r', encoding='utf-8') as file:
+    for line in file:
+        if line.strip():
+            name, link = line.strip().split(',', 1)
+            link_list.append({'name': name, 'link': link})
 
 # 使用ThreadPoolExecutor并发检查多个链接
 with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
