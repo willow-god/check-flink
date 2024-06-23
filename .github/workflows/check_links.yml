@@ -1,6 +1,9 @@
 name: Check Links and Generate JSON
 
 on:
+  push:
+    branches:
+      - main
   schedule:
     - cron: '0 1 * * *'
     - cron: '0 13 * * *'
