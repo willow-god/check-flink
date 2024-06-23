@@ -9,6 +9,9 @@ on:
     - cron: '0 13 * * *'
   workflow_dispatch:
 
+env:
+  TZ: Asia/Shanghai
+
 jobs:
   check_links:
     runs-on: ubuntu-latest
@@ -40,5 +43,5 @@ jobs:
         PAT_TOKEN: ${{ secrets.PAT_TOKEN }}
       run: |
         git add .
-        git commit -m "每日更新"
+        git commit -m "⏱️GitHub Action每日定时更新"
         git push https://x-access-token:${{ secrets.PAT_TOKEN }}@github.com/${{ github.repository }}.git main
