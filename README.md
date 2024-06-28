@@ -41,65 +41,13 @@
 
 ## 使用说明
 
-### 配置 GitHub Actions
+### 1. 复刻仓库
 
-在项目的 GitHub 仓库中，创建一个 GitHub Actions 工作流配置文件（`.github/workflows/check_links.yml`），内容如下：
+首先，复刻这个仓库到你的 GitHub 账户，命名随意。
 
-```yaml
-name: Check Links and Generate JSON
+### 2. 环境配置
 
-on:
-  push:
-    branches:
-      - main
-  schedule:
-    - cron: '0 1 * * *'  # 每天凌晨一点执行一次
-  workflow_dispatch:
-
-jobs:
-  check_links:
-    runs-on: ubuntu-latest
-
-    steps:
-    - name: Checkout Repository
-      uses: actions/checkout@v2
-
-    - name: Set up Python
-      uses: actions/setup-python@v2
-      with:
-        python-version: '3.x'
-
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install requests
-
-    - name: Run Python script to check links from JSON and generate JSON
-      run: python test-friend.py
-
-    - name: Run Python script to check links from TXT and generate JSON
-      run: python test-friend-in-txt.py
-
-    - name: Ensure file is updated
-      run: touch result.json
-
-    - name: Configure Git
-      run: |
-        git config --global user.email "actions@github.com"
-        git config --global user.name "GitHub Actions"
-
-    - name: Commit and push generated JSON file
-      env:
-        PAT_TOKEN: ${{ secrets.PAT_TOKEN }}
-      run: |
-        git add .
-        git commit -m "每日更新"
-        git push https://x-access-token:${{ secrets.PAT_TOKEN }}@github.com/${{ github.repository }}.git main
-```
-
-以上action为从Json文件中获取，除此之外还有通用方式，从txt获取，具体请看顶部详细教程介绍。
-
-### 添加 GitHub Secrets
+#### （1）添加密钥
 
 在 GitHub 仓库的设置中，添加一个名为 `PAT_TOKEN` 的秘密，步骤如下：
 
@@ -114,7 +62,7 @@ jobs:
 
 ![](/images/PAT.png)
 
-### 配置仓库权限
+#### （2）配置仓库权限
 
 在 GitHub 仓库的设置中，确保 Actions 有写权限，步骤如下：
 
@@ -124,7 +72,61 @@ jobs:
 4. 在“Workflow permissions”部分，选择“Read and write permissions”。
 5. 点击“Save”按钮保存设置。
 
-### 部署到 Vercel 或 Zeabur
+### 3. 选择抓取方式
+
+#### （1）JSON（比较复杂，butterfly 及类 butterfly 以外主题不推荐）
+
+- 修改 `test-friend.py` 文件内的 JSON 文件地址。
+
+  ```python
+  # 目标JSON数据的URL
+  json_url = 'https://blog.example.com/flink_count.json'
+  ```
+- 具体所需JSON文件格式示例：
+
+  ```json
+  {
+    "link_list": [
+      {
+        "name": "String",
+        "link": "String",
+        "avatar": "String",
+        "descr": "String",
+        "siteshot": "String"
+      },{
+        "name": "String",
+        "link": "String",
+        "avatar": "String",
+        "descr": "String",
+        "siteshot": "String"
+      },
+    ],
+    "length": 100
+  }
+  ```
+
+- JSON 具体生成教程请看[详细教程](https://blog.qyliu.top/posts/c2262998/)。
+
+#### （2）TXT（简单，推荐，全适用）
+
+- 修改 `link.txt` 中的内容，格式如下，请修改为你自己的数据：
+  ```plaintext
+  清羽飞扬,https://blog.qyliu.top/
+  ChrisKim,https://www.zouht.com/
+  Akilar,https://akilar.top/
+  张洪Heo,https://blog.zhheo.com/
+  ```
+
+- 修改 Action 任务中，运行 Python 脚本部分，改为运行 TXT 脚本文件：
+
+  ```yaml
+   - name: Run Python script to check frined-links
+     run: python test-friend-in-txt.py
+  ```
+
+**注**：两种抓取方式最终获得结果相同，所以不影响后面的操作。
+
+### 4. 部署前端页面
 
 在 Vercel 或 Zeabur 选择对应仓库，按照以下步骤进行操作：
 
@@ -145,19 +147,49 @@ jobs:
    - 点击“Deploy”按钮开始部署。
    - 部署完成后，Vercel 或 Zeabur 会生成一个 URL，您可以使用这个 URL 访问部署的网页。
 
-使用zeabur或者vercel部署的目的是加快国内访问，并且可以跟随仓库更新实时同步内容，配合上前台的缓存和异步加载，可以得到最佳体验。
+使用zeabur或者vercel部署的目的是加快结果文件国内访问并且展示最终结果， Vercel 或 Zeabur 平台可以跟随仓库更新实时同步内容，配合上前端的缓存和异步加载，可以得到较好体验。
 
-### 通过 API 获取数据
+### 5. 进阶操作
 
-该项目还生成了一个 JSON 文件，通过该文件可以获取最新的链接检查结果。您可以使用任何支持 HTTP 请求的编程语言或工具来获取此 JSON 数据。
-
-API 地址如下（用本站部署的作为示例）：
+该项目最终文件结果为 JSON 格式，通过该文件可以获取最新的链接检查结果。您可以使用任何支持 HTTP(S) 请求的编程语言或工具来获取此 JSON 数据，API 地址如下（用本站部署的作为示例）：
 
 ```txt
 https://check.zeabur.app/result.json
 ```
 
-以下是通过 `Javascript` 获取无法访问链接数据的简单页面示例，具体请自行编写：
+#### `result.json` 格式：
+
+```json
+{
+    "accessible_links": [
+        {
+            "name": "清羽飞扬",
+            "link": "https://blog.qyliu.top/"
+        },
+        {
+            "name": "ChrisKim",
+            "link": "https://www.zouht.com/"
+        }
+    ],
+    "inaccessible_links": [
+        {
+            "name": "JackieZhu",
+            "link": "https://blog.zhfan.top/"
+        },
+        {
+            "name": "青桔气球",
+            "link": "https://blog.qjqq.cn/"
+        }
+    ],
+    "accessible_count": 2,
+    "inaccessible_count": 2,
+    "timestamp": "2024-06-20T23:40:15"
+}
+```
+
+#### 展示到HTML：
+
+通过 `Javascript` 获取无法访问链接数据的简单页面示例：
 
 ```html
 <!DOCTYPE html>
@@ -201,210 +233,96 @@ https://check.zeabur.app/result.json
 </html>
 ```
 
-### JSON 结构介绍
+#### 展示到友链卡片
 
-链接检查结果以 JSON 格式存储，主要包含以下字段：
+除以上展示为单独页面之外，还可以通过JavaScript对比友链结果，生成友链卡片小标签，大致效果可以看[清羽飞扬の友链页面](https://blog.qyliu.top/link/)，示例代码如下：
 
-- `accessible_links`: 可访问的链接列表。
-- `inaccessible_links`: 不可访问的链接列表。
-- `timestamp`: 生成检查结果的时间戳。
-
-以下是一个示例 JSON 文件结构：
-
-```json
-{
-    "accessible_links": [
-        {
-            "name": "清羽飞扬",
-            "link": "https://blog.qyliu.top/"
-        },
-        {
-            "name": "ChrisKim",
-            "link": "https://www.zouht.com/"
+```javascript
+<style>
+    .status-tag {
+        position: absolute;
+        top: 0px;
+        left: 0px;
+        padding: 3px 8px;
+        border-radius: 6px 0px 6px 0px;
+        font-size: 12px;
+        color: white;
+        font-weight: bold;
+    }
+</style>
+<script>
+function addStatusTagsWithCache(jsonUrl) {
+    const cacheKey = "statusTagsData";
+    const cacheExpirationTime = 30 * 60 * 1000; // 半小时
+    function fetchDataAndUpdateUI() {
+        fetch(jsonUrl)
+            .then(response => response.json())
+            .then(data => {
+                const accessibleLinks = data.accessible_links.map(item => item.link.replace(/\/$/, ''));
+                const inaccessibleLinks = data.inaccessible_links.map(item => item.link.replace(/\/$/, ''));
+                document.querySelectorAll('.site-card').forEach(card => {
+                    const link = card.href.replace(/\/$/, '');
+                    const statusTag = document.createElement('div');
+                    statusTag.classList.add('status-tag');
+                    let matched = false;
+                    if (accessibleLinks.includes(link)) {
+                        statusTag.textContent = '正常';
+                        statusTag.style.backgroundColor = '#005E00';
+                        matched = true;
+                    } else if (inaccessibleLinks.includes(link)) {
+                        statusTag.textContent = '疑问';
+                        statusTag.style.backgroundColor = '#9B0000';
+                        matched = true;
+                    }
+                    if (matched) {
+                        card.style.position = 'relative';
+                        card.appendChild(statusTag);
+                    }
+                });
+                const cacheData = {
+                    data: data,
+                    timestamp: Date.now()
+                };
+                localStorage.setItem(cacheKey, JSON.stringify(cacheData));
+            })
+            .catch(error => console.error('Error fetching test-flink result.json:', error));
+    }
+    const cachedData = localStorage.getItem(cacheKey);
+    if (cachedData) {
+        const { data, timestamp } = JSON.parse(cachedData);
+        if (Date.now() - timestamp < cacheExpirationTime) {
+            const accessibleLinks = data.accessible_links.map(item => item.link.replace(/\/$/, ''));
+            const inaccessibleLinks = data.inaccessible_links.map(item => item.link.replace(/\/$/, ''));
+            document.querySelectorAll('.site-card').forEach(card => {
+                const link = card.href.replace(/\/$/, '');
+                const statusTag = document.createElement('div');
+                statusTag.classList.add('status-tag');
+                let matched = false;
+                if (accessibleLinks.includes(link)) {
+                    statusTag.textContent = '正常';
+                    statusTag.style.backgroundColor = '#005E00';
+                    matched = true;
+                } else if (inaccessibleLinks.includes(link)) {
+                    statusTag.textContent = '疑问';
+                    statusTag.style.backgroundColor = '#9B0000';
+                    matched = true;
+                }
+                if (matched) {
+                    card.style.position = 'relative';
+                    card.appendChild(statusTag);
+                }
+            });
+            return;
         }
-    ],
-    "inaccessible_links": [
-        {
-            "name": "JackieZhu",
-            "link": "https://blog.zhfan.top/"
-        },
-        {
-            "name": "青桔气球",
-            "link": "https://blog.qjqq.cn/"
-        }
-    ],
-    "accessible_count": 2,
-    "inaccessible_count": 2,
-    "timestamp": "2024-06-20T23:40:15"
+    }
+    fetchDataAndUpdateUI();
 }
+setTimeout(() => {
+    addStatusTagsWithCache('https://check.zeabur.app/result.json');
+}, 0);
+</script>
 ```
 
-**不管是txt获取数据或者从json获取数据，最终得到的结果均一致，不会影响到最终结果的结构！**
+### 6. 联系作者
 
-### `test-friend.py`
-
-该脚本主要执行以下步骤：
-
-1. 忽略 HTTPS 请求的警告信息。
-2. 发送 HTTP 请求获取目标 JSON 数据，并解析其中的链接列表。
-3. 使用 `ThreadPoolExecutor` 并发检查多个链接的可访问性。
-4. 将可达和不可达的链接分开，并将结果写入 `result.json` 文件。
-
-```python
-import json
-import requests
-import warnings
-import concurrent.futures
-from datetime import datetime
-
-# 忽略警告信息
-warnings.filterwarnings("ignore", message="Unverified HTTPS request is being made.*")
-
-# 用户代理字符串，模仿浏览器
-user_agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36"
-
-# 检查链接是否可访问的函数
-def check_link_accessibility(item):
-    headers = {"User-Agent": user_agent}
-    link = item['link']
-    try:
-        # 发送HEAD请求
-        response = requests.head(link, headers=headers, timeout=5)
-        if response.status_code == 200:
-            return [item, 1]  # 如果链接可访问，返回链接
-    except requests.RequestException:
-        pass  # 如果出现请求异常，不执行任何操作
-    
-    try:
-        # 如果HEAD请求失败，尝试发送GET请求
-        response = requests.get(link, headers=headers, timeout=5)
-        if response.status_code == 200:
-            return [item, 1]  # 如果GET请求成功，返回链接
-    except requests.RequestException:
-        pass  # 如果出现请求异常，不执行任何操作
-    
-    return [item, -1]  # 如果所有请求都失败，返回-1
-
-# 目标JSON数据的URL
-json_url = 'https://blog.qyliu.top/flink_count.json'
-
-# 发送HTTP GET请求获取JSON数据
-response = requests.get(json_url)
-if response.status_code == 200:
-    data = response.json()  # 解析JSON数据
-    link_list = data['link_list']  # 提取所有的链接项
-else:
-    print(f"Failed to retrieve data, status code: {response.status_code}")
-    exit()
-
-# 使用ThreadPoolExecutor并发检查多个链接
-with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
-    results = list(executor.map(check_link_accessibility, link_list))
-
-# 分割可达和不可达的链接
-accessible_results = [{'name': result[0]['name'], 'link': result[0]['link']} for result in results if result[1] == 1]
-inaccessible_results = [{'name': result[0]['name'], 'link': result[0]['link']} for result in results if result[1] == -1]
-
-# 获取当前时间
-current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-
-# 统计可访问和不可访问的链接数
-accessible_count = len(accessible_results)
-inaccessible_count = len(inaccessible_results)
-
-# 将结果写入JSON文件
-output_json_path = './result.json'
-with open(output_json_path, 'w', encoding='utf-8') as file:
-    json.dump({
-        'timestamp': current_time,
-        'accessible_links': accessible_results,
-        'inaccessible_links': inaccessible_results,
-        'accessible_count': accessible_count,
-        'inaccessible_count': inaccessible_count
-    }, file, ensure_ascii=False, indent=4)
-
-print(f"检查完成，结果已保存至 '{output_json_path}' 文件。")
-```
-
-### `test-friend-in-txt.py`
-
-该脚本主要执行以下步骤：
-
-1. 忽略 HTTPS 请求的警告信息。
-2. 从 `link.txt` 文件中读取链接列表。
-3. 使用 `ThreadPoolExecutor` 并发检查多个链接的可访问性。
-4. 将可达和不可达的链接分开，并将结果写入 `result.json` 文件。
-
-```python
-import json
-import requests
-import warnings
-import concurrent.futures
-from datetime import datetime
-
-# 忽略警告信息
-warnings.filterwarnings("ignore", message="Unverified HTTPS request is being made.*")
-
-# 用户代理字符串，模仿浏览器
-user_agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36"
-
-# 检查链接是否可访问的函数
-def check_link_accessibility(item):
-    headers = {"User-Agent": user_agent}
-    link = item['link']
-    try:
-        # 发送HEAD请求
-        response = requests.head(link, headers=headers, timeout=5)
-        if response.status_code == 200:
-            return [item, 1]  # 如果链接可访问，返回链接
-    except requests.RequestException:
-        pass  # 如果出现请求异常，不执行任何操作
-    
-    try:
-        # 如果HEAD请求失败，尝试发送GET请求
-        response = requests.get(link, headers=headers, timeout=5)
-        if response.status_code == 200:
-            return [item, 1]  # 如果GET请求成功，返回链接
-    except requests.RequestException:
-        pass  # 如果出现请求异常，不执行任何操作
-    
-    return [item, -1]  # 如果所有请求都失败，返回-1
-
-# 从link.txt中读取链接和名称
-link_list = []
-with open('./link.txt', 'r', encoding='utf-8') as file:
-    for line in file:
-        if line.strip():
-            name, link = line.strip().split(',', 1)
-            link_list.append({'name': name, 'link': link})
-
-# 使用ThreadPoolExecutor并发检查多个链接
-with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
-    results = list(executor.map(check_link_accessibility, link_list))
-
-# 分割可达和不可达的链接
-accessible_results = [{'name': result[0]['name'], 'link': result[0]['link']} for result in results if result[1] == 1]
-inaccessible_results = [{'name': result[0]['name'], 'link': result[0]['link']} for result in results if result[1] == -1]
-
-# 获取当前时间
-current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-
-# 统计可访问和不可访问的链接数
-accessible_count = len(accessible_results)
-inaccessible_count = len(inaccessible_results)
-
-# 将结果写入JSON文件
-output_json_path = './result.json'
-with open(output_json_path, 'w', encoding='utf-8') as file:
-    json.dump({
-        'timestamp': current_time,
-        'accessible_links': accessible_results,
-        'inaccessible_links': inaccessible_results,
-        'accessible_count': accessible_count,
-        'inaccessible_count': inaccessible_count
-    }, file, ensure_ascii=False, indent=4)
-
-print(f"检查完成，结果已保存至 '{output_json_path}' 文件。")
-```
-
-这个项目提供了一种自动化的方式来定期检查链接的可访问性，并将结果以 JSON 格式输出，便于集成到前端页面。通过使用 GitHub Actions，整个流程实现了自动化和可视化，极大地方便了用户对链接的管理和监控。
+如果有疑问可通过[个人主页](https://www.qyliu.top)或者提 issue 进行联系，非常欢迎。
