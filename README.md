@@ -4,7 +4,7 @@
 
 # 友情链接自动检查项目
 
-[示例页面](https://check.zeabur.app)
+[示例页面](https://check.zeabur.app)|[详细教程](https://blog.qyliu.top/posts/c2262998/)
 
 这个项目旨在自动检查从互联网上托管的 JSON 文件中的链接的可访问性。它利用 GitHub Actions 来定期调度检查，并将结果输出为 JSON 文件，可以部署到如 Vercel 等平台以便于访问。该项目基于并改进了 [butterfly-check-links](https://github.com/shangskr/butterfly-check-links.git) 项目。
 
@@ -95,8 +95,9 @@ jobs:
         git add .
         git commit -m "每日更新"
         git push https://x-access-token:${{ secrets.PAT_TOKEN }}@github.com/${{ github.repository }}.git main
-
 ```
+
+以上action为从Json文件中获取，除此之外还有通用方式，从txt获取，具体请看顶部详细教程介绍。
 
 ### 添加 GitHub Secrets
 
@@ -143,6 +144,8 @@ jobs:
 4. **部署项目**：
    - 点击“Deploy”按钮开始部署。
    - 部署完成后，Vercel 或 Zeabur 会生成一个 URL，您可以使用这个 URL 访问部署的网页。
+
+使用zeabur或者vercel部署的目的是加快国内访问，并且可以跟随仓库更新实时同步内容，配合上前台的缓存和异步加载，可以得到最佳体验。
 
 ### 通过 API 获取数据
 
@@ -235,6 +238,8 @@ https://check.zeabur.app/result.json
     "timestamp": "2024-06-20T23:40:15"
 }
 ```
+
+**不管是txt获取数据或者从json获取数据，最终得到的结果均一致，不会影响到最终结果的结构！**
 
 ### `test-friend.py`
 
