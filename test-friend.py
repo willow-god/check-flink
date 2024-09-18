@@ -10,13 +10,16 @@ warnings.filterwarnings("ignore", message="Unverified HTTPS request is being mad
 # 用户代理字符串，模仿浏览器
 user_agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36"
 
+# 拼接的备用域名
+backup_domain = "https://lius.me/"
+
 # 检查链接是否可访问的函数
 def check_link_accessibility(item):
     headers = {"User-Agent": user_agent}
     link = item['link']
     try:
         # 发送HEAD请求
-        response = requests.head(link, headers=headers, timeout=5)
+        response = requests.head(link, headers=headers, timeout=15)
         if response.status_code == 200:
             return [item, 1]  # 如果链接可访问，返回链接
     except requests.RequestException:
@@ -24,11 +27,20 @@ def check_link_accessibility(item):
     
     try:
         # 如果HEAD请求失败，尝试发送GET请求
-        response = requests.get(link, headers=headers, timeout=5)
+        response = requests.get(link, headers=headers, timeout=15)
         if response.status_code == 200:
             return [item, 1]  # 如果GET请求成功，返回链接
     except requests.RequestException:
         pass  # 如果出现请求异常，不执行任何操作
+
+    # 如果以上都失败，尝试使用拼接的备用域名访问
+    backup_link = backup_domain + link
+    try:
+        response = requests.get(backup_link, headers=headers, timeout=15)
+        if response.status_code == 200:
+            return [item, 1]  # 通过备用域名成功，返回备用链接
+    except requests.RequestException:
+        pass
     
     return [item, -1]  # 如果所有请求都失败，返回-1
 
