@@ -55,7 +55,7 @@ jobs:
   keepalive-workflow:
     name: Keepalive Workflow
     if: ${{ always() }}
-    needs: friend-circle-lite
+    needs: check_links
     runs-on: ubuntu-latest
     permissions:
       actions: write
