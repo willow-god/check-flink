@@ -5,7 +5,7 @@ import time
 import concurrent.futures
 from datetime import datetime
 from queue import Queue
-# from dotenv import load_dotenv
+from dotenv import load_dotenv
 import os
 
 # 忽略警告信息
@@ -15,7 +15,7 @@ warnings.filterwarnings("ignore", message="Unverified HTTPS request is being mad
 user_agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36"
 
 # API Key 和 请求URL的模板
-# load_dotenv()
+load_dotenv()
 api_key = os.getenv("LIJIANGAPI_TOKEN")  # 替换为你的API Key
 api_url_template = "https://api.76.al/api/web/query?key={}&url={}"
 

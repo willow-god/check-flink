@@ -38,9 +38,30 @@ jobs:
         git config --global user.name "GitHub Actions"
 
     - name: Commit and push
-      env:
-        PAT_TOKEN: ${{ secrets.PAT_TOKEN }}
       run: |
+        cp ./result.json static/
+        cd static
+        git init
         git add .
         git commit -m "⏱️GitHub Action每日定时更新"
-        git push https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git main
+        git push --force https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git HEAD:page
+    
+    - name: Delete Workflow Runs
+      uses: Mattraks/delete-workflow-runs@v2
+      with:
+        retain_days: 30
+        keep_minimum_runs: 6
+
+  keepalive-workflow:
+    name: Keepalive Workflow
+    if: ${{ always() }}
+    needs: friend-circle-lite
+    runs-on: ubuntu-latest
+    permissions:
+      actions: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: gautamkrishnar/keepalive-workflow@v2
+        with:
+          committer_username: "github-actions[bot]"
+          committer_email: "github-actions[bot]@users.noreply.github.com"
