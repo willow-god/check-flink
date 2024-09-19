@@ -14,25 +14,44 @@ user_agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTM
 def check_link_accessibility(item):
     headers = {"User-Agent": user_agent}
     link = item['link']
-    try:
-        # 发送HEAD请求
-        response = requests.head(link, headers=headers, timeout=5)
-        if response.status_code == 200:
-            return [item, 1]  # 如果链接可访问，返回链接
-    except requests.RequestException:
-        pass  # 如果出现请求异常，不执行任何操作
-    
-    try:
-        # 如果HEAD请求失败，尝试发送GET请求
-        response = requests.get(link, headers=headers, timeout=5)
-        if response.status_code == 200:
-            return [item, 1]  # 如果GET请求成功，返回链接
-    except requests.RequestException:
-        pass  # 如果出现请求异常，不执行任何操作
-    
-    return [item, -1]  # 如果所有请求都失败，返回-1
+    latency = None
+    ssl_status = None
 
-# 从link.txt中读取链接和名称
+    # 尝试检查 HTTPS 链接
+    try:
+        response = requests.head(link, headers=headers, timeout=5, verify=False)
+        latency = response.elapsed.total_seconds()
+        if response.status_code == 200:
+            ssl_status = response.url.startswith('https')
+            return [item, latency, ssl_status]
+    except requests.RequestException:
+        pass
+
+    # 如果 HTTPS 失败，尝试使用代理
+    try:
+        proxy_link = 'http://' + link  # 转发代理使用 HTTP
+        response = requests.get(proxy_link, headers=headers, timeout=5, verify=False)
+        latency = response.elapsed.total_seconds()
+        if response.status_code == 200:
+            ssl_status = response.url.startswith('https')
+            return [item, latency, ssl_status]
+    except requests.RequestException:
+        pass
+
+    # 如果代理也失败，尝试 HTTP 链接
+    try:
+        http_link = 'http://' + link
+        response = requests.get(http_link, headers=headers, timeout=5, verify=False)
+        latency = response.elapsed.total_seconds()
+        if response.status_code == 200:
+            ssl_status = response.url.startswith('https')
+            return [item, latency, ssl_status]
+    except requests.RequestException:
+        pass
+
+    return [item, -1, False]  # 如果所有请求都失败，返回 -1
+
+# 从 link.txt 中读取链接和名称
 link_list = []
 with open('./link.txt', 'r', encoding='utf-8') as file:
     for line in file:
@@ -40,30 +59,40 @@ with open('./link.txt', 'r', encoding='utf-8') as file:
             name, link = line.strip().split(',', 1)
             link_list.append({'name': name, 'link': link})
 
-# 使用ThreadPoolExecutor并发检查多个链接
+# 使用 ThreadPoolExecutor 并发检查多个链接
 with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
     results = list(executor.map(check_link_accessibility, link_list))
 
 # 分割可达和不可达的链接
-accessible_results = [{'name': result[0]['name'], 'link': result[0]['link']} for result in results if result[1] == 1]
-inaccessible_results = [{'name': result[0]['name'], 'link': result[0]['link']} for result in results if result[1] == -1]
+link_status = []
+for result in results:
+    item, latency, ssl_status = result
+    if latency != -1:
+        latency = round(latency, 2)  # 保留两位小数
+    link_status.append({
+        'name': item['name'],
+        'link': item['link'],
+        'latency': latency,  # 如果 latency 是 -1，则直接保存为 -1
+        'ssl_status': ssl_status
+    })
 
 # 获取当前时间
 current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
 # 统计可访问和不可访问的链接数
-accessible_count = len(accessible_results)
-inaccessible_count = len(inaccessible_results)
+accessible_count = len([item for item in link_status if item['latency'] != -1])
+inaccessible_count = len([item for item in link_status if item['latency'] == -1])
+total_count = len(link_status)
 
-# 将结果写入JSON文件
+# 将结果写入 JSON 文件
 output_json_path = './result.json'
 with open(output_json_path, 'w', encoding='utf-8') as file:
     json.dump({
         'timestamp': current_time,
-        'accessible_links': accessible_results,
-        'inaccessible_links': inaccessible_results,
         'accessible_count': accessible_count,
-        'inaccessible_count': inaccessible_count
+        'inaccessible_count': inaccessible_count,
+        'total_count': total_count,
+        'link_status': link_status
     }, file, ensure_ascii=False, indent=4)
 
 print(f"检查完成，结果已保存至 '{output_json_path}' 文件。")

@@ -44,4 +44,4 @@ jobs:
       run: |
         git add .
         git commit -m "⏱️GitHub Action每日定时更新"
-        git push https://x-access-token:${{ secrets.PAT_TOKEN }}@github.com/${{ github.repository }}.git main
+        git push https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git main

@@ -2,127 +2,158 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>友链检测</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>友链检测结果</title>
     <link rel="icon" href="/images/avatar.png" type="image/x-icon">
     <style>
         body {
             font-family: Arial, sans-serif;
+            background-color: #f9f9f9;
             margin: 0;
             padding: 0;
             background: url('https://api.qjqq.cn/api/Img') no-repeat center center fixed;
             background-size: cover;
-            color: #fff;
         }
         .container {
-            width: 1100px;
-            max-width: 90%;
-            margin: 60px auto;
-            padding: 30px 15px;
-            background: rgba(250, 250, 250, 0.6);
-            border-radius: 12px;
-            box-shadow: 0 2px 10px rgba(193, 193, 193, 0.5);
-        }
-        .card {
-            background: rgba(255, 255, 255, 0.8);
-            margin-bottom: 20px;
+            width: 90%;
+            max-width: 1200px;
+            margin: 50px auto;
             padding: 20px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            background-color: #ffffffed;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
             border-radius: 10px;
-            flex: 1 1 calc(25% - 20px);
-            box-sizing: border-box;
-            margin: 10px;
-            transition: box-shadow 0.3s ease-in-out;
-            cursor: pointer;
         }
-        .card:hover {
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-        }
-        .card-title {
-            font-size: 20px;
+        h1 {
+            text-align: center;
             color: #333;
-            margin-top: 0;
             margin-bottom: 10px;
         }
-        .card-link {
-            font-size: 16px;
-            color: #007bff;
-            text-decoration: none;
-        }
-        .card-link:hover {
-            text-decoration: underline;
-        }
-        .card-list {
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: space-between;
-        }
-        .card-list-title {
+        #summary {
             text-align: center;
-            margin-top: 20px;
+            font-size: 1.1em;
             margin-bottom: 20px;
-            font-size: 24px;
-            color: #000000;
+            color: #555;
         }
-        .description {
-            margin-bottom: 30px;
-            padding: 30px;
-            font-size: 18px;
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            padding: 12px 15px;
+            border: 1px solid #ddd;
+            text-align: center; /* 将文本居中 */
+        }
+        th {
+            background-color: #f2f2f2;
             color: #333;
+        }
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        tr:hover {
+            background-color: #f1f1f1;
+        }
+        /* 移除特定类的文本对齐，确保所有单元格居中 */
+        .latency, .ssl-status {
             text-align: center;
+        }
+        footer {
+            text-align: center;
+            margin-top: 40px;
+            color: #777;
+        }
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+            .container {
+                width: 95%;
+                margin: 20px auto;
+                padding: 15px;
+            }
+            th, td {
+                padding: 10px 8px;
+            }
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="description">
-            <p>本页面用于自动检查和展示清羽飞扬站点友链的可访问性。</p>
-            <p>链接每隔一天自动更新一次。由于在GitHub Actions环境中运行，结果可能并不完全准确。对于被标记为不可访问的链接，我会进行手动检测。如果链接确实无法访问，我将尝试联系站长。如果一周内无法联系上，将会下架该友链。</p>
-            <p id="linkInfo"></p>
-        </div>
-        <h2 class="card-list-title">不可访问链接</h2>
-        <div id="inaccessibleLinks" class="card-list"></div>
-        <h2 class="card-list-title">可访问链接</h2>
-        <div id="accessibleLinks" class="card-list"></div>
-    </div>
 
-    <script>
-        // 假设result.json文件位于同一目录下
-        const jsonUrl = './result.json';
+<div class="container">
+    <h1>友链检测结果</h1>
+    <p id="summary"></p>
+    
+    <table>
+        <thead>
+            <tr>
+                <th>名称</th>
+                <th>链接</th>
+                <th>时延 (秒)</th>
+                <th>SSL 状态</th>
+            </tr>
+        </thead>
+        <tbody id="link-table-body">
+            <!-- 表格数据将由JS动态生成 -->
+        </tbody>
+    </table>
+</div>
 
-        async function fetchJson(url) {
-            try {
-                const response = await fetch(url);
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                return await response.json();
-            } catch (error) {
-                console.error("Fetch error: ", error);
-            }
-        }
+<footer>
+    <p>友链检测 © 2024</p>
+</footer>
 
-        function displayLinks(links, containerId) {
-            const container = document.getElementById(containerId);
-            container.innerHTML = ''; // 清空容器
-            links.forEach(link => {
-                const card = document.createElement('div');
-                card.className = 'card';
-                card.innerHTML = `
-                    <h5 class="card-title">${link.name}</h5>
-                    <a href="${link.link}" class="card-link" target="_blank">${link.link}</a>
-                `;
-                card.onclick = () => window.open(link.link, '_blank');
-                container.appendChild(card);
+<script>
+    // 从 result.json 文件中获取数据
+    fetch('./result.json')
+        .then(response => response.json())
+        .then(data => {
+            // 提取整体统计信息
+            const summary = `总数: ${data.total_count} | 可访问: ${data.accessible_count} | 不可访问: ${data.inaccessible_count}`;
+            document.getElementById('summary').textContent = summary + ` | 检测时间: ${data.timestamp}`;
+
+            // 动态生成表格数据
+            const tbody = document.getElementById('link-table-body');
+            data.link_status.forEach(item => {
+                const row = document.createElement('tr');
+
+                // 名称列
+                const nameCell = document.createElement('td');
+                nameCell.textContent = item.name;
+                row.appendChild(nameCell);
+
+                // 链接列
+                const linkCell = document.createElement('td');
+                const linkElement = document.createElement('a');
+                linkElement.href = item.link;
+                linkElement.target = "_blank";
+                linkElement.textContent = item.link;
+                linkCell.appendChild(linkElement);
+                row.appendChild(linkCell);
+
+                // 时延列
+                const latencyCell = document.createElement('td');
+                latencyCell.textContent = item.latency >= 0 ? item.latency.toFixed(2) : '不可达';
+                row.appendChild(latencyCell);
+
+                // SSL 状态列
+                const sslCell = document.createElement('td');
+                sslCell.textContent = item.ssl_status ? '✔️' : '❌';
+                row.appendChild(sslCell);
+
+                tbody.appendChild(row);
             });
-        }
-
-        fetchJson(jsonUrl).then(data => {
-            document.getElementById('linkInfo').innerHTML = `
-                可访问链接数量：${data.accessible_count}，不可访问链接数量：${data.inaccessible_count}，更新时间：${data.timestamp}
-            `;
-            displayLinks(data.inaccessible_links, 'inaccessibleLinks');
-            displayLinks(data.accessible_links, 'accessibleLinks');
+        })
+        .catch(error => {
+            console.error('Error loading JSON data:', error);
+            const tbody = document.getElementById('link-table-body');
+            const row = document.createElement('tr');
+            const cell = document.createElement('td');
+            cell.colSpan = 4;
+            cell.textContent = '无法加载数据';
+            cell.style.textAlign = 'center';
+            row.appendChild(cell);
+            tbody.appendChild(row);
         });
-    </script>
+</script>
+
 </body>
 </html>
