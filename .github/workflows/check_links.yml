@@ -2,8 +2,6 @@ name: Check Links and Generate JSON
 
 on:
   push:
-    branches:
-      - main
   schedule:
     - cron: '0 1 * * *'
     - cron: '0 13 * * *'
@@ -31,7 +29,9 @@ jobs:
         pip install requests
 
     - name: Run Python script to check frined-links
-      run: python test-friend.py
+      env:
+        LIJIANGAPI_TOKEN: ${{ secrets.LIJIANGAPI_TOKEN }}
+      run: python test-friend-api.py
 
     - name: Configure git
       run: |

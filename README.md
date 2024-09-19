@@ -161,29 +161,30 @@ https://check.zeabur.app/result.json
 
 ```json
 {
-    "accessible_links": [
+    "timestamp": "2024-09-19 09:18:49",
+    "accessible_count": 64,
+    "inaccessible_count": 12,
+    "total_count": 76,
+    "link_status": [
         {
             "name": "清羽飞扬",
-            "link": "https://blog.qyliu.top/"
+            "link": "https://blog.qyliu.top/",
+            "latency": -1,
+            "ssl_status": false
         },
         {
             "name": "ChrisKim",
-            "link": "https://www.zouht.com/"
-        }
-    ],
-    "inaccessible_links": [
-        {
-            "name": "JackieZhu",
-            "link": "https://blog.zhfan.top/"
+            "link": "https://www.zouht.com/",
+            "latency": 0.76,
+            "ssl_status": true
         },
         {
-            "name": "青桔气球",
-            "link": "https://blog.qjqq.cn/"
+            "name": "Akilar",
+            "link": "https://akilar.top/",
+            "latency": 3.31,
+            "ssl_status": true
         }
-    ],
-    "accessible_count": 2,
-    "inaccessible_count": 2,
-    "timestamp": "2024-06-20T23:40:15"
+    ]
 }
 ```
 
@@ -191,94 +192,138 @@ https://check.zeabur.app/result.json
 
 通过 `Javascript` 获取无法访问链接数据的简单页面示例：
 
-```html
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>友链检测</title>
-</head>
-<body>
-    <h1>不可访问的链接</h1>
-    <div id="inaccessibleLinksContainer"></div>
+```javascript
+    fetch('./result.json')
+        .then(response => response.json())
+        .then(data => {
+            // 提取整体统计信息
+            const summary = `总数: ${data.total_count} | 可访问: ${data.accessible_count} | 不可访问: ${data.inaccessible_count}`;
+            document.getElementById('summary').textContent = summary + ` | 检测时间: ${data.timestamp}`;
 
-    <script>
-        async function fetchInaccessibleLinks() {
-            const jsonUrl = 'https://your-deployed-url.com/result.json';
-            try {
-                const response = await fetch(jsonUrl);
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                const data = await response.json();
-                displayInaccessibleLinks(data.inaccessible_links);
-            } catch (error) {
-                console.error("Fetch error: ", error);
-            }
-        }
+            // 动态生成表格数据
+            const tbody = document.getElementById('link-table-body');
+            data.link_status.forEach(item => {
+                const row = document.createElement('tr');
 
-        function displayInaccessibleLinks(links) {
-            const container = document.getElementById('inaccessibleLinksContainer');
-            container.innerHTML = ''; // 清空容器
-            links.forEach(link => {
-                const linkElement = document.createElement('p');
-                linkElement.innerHTML = `<strong>${link.name}:</strong> <a href="${link.link}" target="_blank">${link.link}</a>`;
-                container.appendChild(linkElement);
+                // 名称列
+                const nameCell = document.createElement('td');
+                nameCell.textContent = item.name;
+                row.appendChild(nameCell);
+
+                // 链接列
+                const linkCell = document.createElement('td');
+                const linkElement = document.createElement('a');
+                linkElement.href = item.link;
+                linkElement.target = "_blank";
+                linkElement.textContent = item.link;
+                linkCell.appendChild(linkElement);
+                row.appendChild(linkCell);
+
+                // 时延列
+                const latencyCell = document.createElement('td');
+                latencyCell.textContent = item.latency >= 0 ? item.latency.toFixed(2) : '不可达';
+                row.appendChild(latencyCell);
+
+                // SSL 状态列
+                const sslCell = document.createElement('td');
+                sslCell.textContent = item.ssl_status ? '✔️' : '❌';
+                row.appendChild(sslCell);
+
+                tbody.appendChild(row);
             });
-        }
-
-        fetchInaccessibleLinks();
-    </script>
-</body>
-</html>
+        })
+        .catch(error => {
+            console.error('Error loading JSON data:', error);
+            const tbody = document.getElementById('link-table-body');
+            const row = document.createElement('tr');
+            const cell = document.createElement('td');
+            cell.colSpan = 4;
+            cell.textContent = '无法加载数据';
+            cell.style.textAlign = 'center';
+            row.appendChild(cell);
+            tbody.appendChild(row);
+        });
 ```
 
 #### 展示到友链卡片
 
 除以上展示为单独页面之外，还可以通过JavaScript对比友链结果，生成友链卡片小标签，大致效果可以看[清羽飞扬の友链页面](https://blog.qyliu.top/link/)，示例代码如下：
 
-```javascript
+```html
 <style>
     .status-tag {
         position: absolute;
         top: 0px;
         left: 0px;
         padding: 3px 8px;
-        border-radius: 6px 0px 6px 0px;
+        border-radius: 12px 0px 12px 0px;
         font-size: 12px;
         color: white;
         font-weight: bold;
+        transition: font-size 0.3s ease-out, width 0.3s ease-out, opacity 0.3s ease-out;
+    }
+    .flink-list-item:hover .status-tag {
+        font-size: 0px;
+        opacity: 0;
+    }
+    /* 固态颜色 */
+    .status-tag-green {
+        background-color: #005E00; /* 绿色 */
+    }
+    .status-tag-light-yellow {
+        background-color: #FED101; /* 浅黄色 */
+    }
+    .status-tag-dark-yellow {
+        background-color: #F0B606; /* 深黄色 */
+    }
+    .status-tag-red {
+        background-color: #B90000; /* 红色 */
     }
 </style>
 <script>
 function addStatusTagsWithCache(jsonUrl) {
     const cacheKey = "statusTagsData";
     const cacheExpirationTime = 30 * 60 * 1000; // 半小时
+    function applyStatusTags(data) {
+        const linkStatus = data.link_status;
+        document.querySelectorAll('.flink-list-item').forEach(card => {
+            if (!card.href) return;
+            const link = card.href.replace(/\/$/, '');
+            const statusTag = document.createElement('div');
+            statusTag.classList.add('status-tag');
+            let matched = false;
+            // 查找链接状态
+            const status = linkStatus.find(item => item.link.replace(/\/$/, '') === link);
+            if (status) {
+                let latencyText = '未知';
+                let className = 'status-tag-red'; // 默认红色
+                if (status.latency === -1) {
+                    latencyText = '未知';
+                } else {
+                    latencyText = status.latency.toFixed(2) + ' s';
+                    if (status.latency <= 2) {
+                        className = 'status-tag-green';
+                    } else if (status.latency <= 5) {
+                        className = 'status-tag-light-yellow';
+                    } else if (status.latency <= 10) {
+                        className = 'status-tag-dark-yellow';
+                    }
+                }
+                statusTag.textContent = latencyText;
+                statusTag.classList.add(className);
+                matched = true;
+            }
+            if (matched) {
+                card.style.position = 'relative';
+                card.appendChild(statusTag);
+            }
+        });
+    }
     function fetchDataAndUpdateUI() {
         fetch(jsonUrl)
             .then(response => response.json())
             .then(data => {
-                const accessibleLinks = data.accessible_links.map(item => item.link.replace(/\/$/, ''));
-                const inaccessibleLinks = data.inaccessible_links.map(item => item.link.replace(/\/$/, ''));
-                document.querySelectorAll('.site-card').forEach(card => {
-                    const link = card.href.replace(/\/$/, '');
-                    const statusTag = document.createElement('div');
-                    statusTag.classList.add('status-tag');
-                    let matched = false;
-                    if (accessibleLinks.includes(link)) {
-                        statusTag.textContent = '正常';
-                        statusTag.style.backgroundColor = '#005E00';
-                        matched = true;
-                    } else if (inaccessibleLinks.includes(link)) {
-                        statusTag.textContent = '疑问';
-                        statusTag.style.backgroundColor = '#9B0000';
-                        matched = true;
-                    }
-                    if (matched) {
-                        card.style.position = 'relative';
-                        card.appendChild(statusTag);
-                    }
-                });
+                applyStatusTags(data);
                 const cacheData = {
                     data: data,
                     timestamp: Date.now()
@@ -291,27 +336,7 @@ function addStatusTagsWithCache(jsonUrl) {
     if (cachedData) {
         const { data, timestamp } = JSON.parse(cachedData);
         if (Date.now() - timestamp < cacheExpirationTime) {
-            const accessibleLinks = data.accessible_links.map(item => item.link.replace(/\/$/, ''));
-            const inaccessibleLinks = data.inaccessible_links.map(item => item.link.replace(/\/$/, ''));
-            document.querySelectorAll('.site-card').forEach(card => {
-                const link = card.href.replace(/\/$/, '');
-                const statusTag = document.createElement('div');
-                statusTag.classList.add('status-tag');
-                let matched = false;
-                if (accessibleLinks.includes(link)) {
-                    statusTag.textContent = '正常';
-                    statusTag.style.backgroundColor = '#005E00';
-                    matched = true;
-                } else if (inaccessibleLinks.includes(link)) {
-                    statusTag.textContent = '疑问';
-                    statusTag.style.backgroundColor = '#9B0000';
-                    matched = true;
-                }
-                if (matched) {
-                    card.style.position = 'relative';
-                    card.appendChild(statusTag);
-                }
-            });
+            applyStatusTags(data);
             return;
         }
     }

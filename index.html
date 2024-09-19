@@ -54,10 +54,6 @@
         tr:hover {
             background-color: #f1f1f1;
         }
-        /* 移除特定类的文本对齐，确保所有单元格居中 */
-        .latency, .ssl-status {
-            text-align: center;
-        }
         footer {
             text-align: center;
             margin-top: 40px;
@@ -88,7 +84,6 @@
                 <th>名称</th>
                 <th>链接</th>
                 <th>时延 (秒)</th>
-                <th>SSL 状态</th>
             </tr>
         </thead>
         <tbody id="link-table-body">
@@ -134,11 +129,6 @@
                 latencyCell.textContent = item.latency >= 0 ? item.latency.toFixed(2) : '不可达';
                 row.appendChild(latencyCell);
 
-                // SSL 状态列
-                const sslCell = document.createElement('td');
-                sslCell.textContent = item.ssl_status ? '✔️' : '❌';
-                row.appendChild(sslCell);
-
                 tbody.appendChild(row);
             });
         })
@@ -147,7 +137,7 @@
             const tbody = document.getElementById('link-table-body');
             const row = document.createElement('tr');
             const cell = document.createElement('td');
-            cell.colSpan = 4;
+            cell.colSpan = 3;
             cell.textContent = '无法加载数据';
             cell.style.textAlign = 'center';
             row.appendChild(cell);
