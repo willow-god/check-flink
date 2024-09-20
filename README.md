@@ -4,7 +4,7 @@
 
 # 友情链接自动检查项目
 
-[示例页面](https://check.zeabur.app) | [详细教程](https://blog.qyliu.top/posts/c2262998/)
+[示例页面](https://check.zeabur.app) | [详细教程](https://blog.liushen.fun/posts/c2262998/)
 
 这个项目旨在自动检查从互联网上托管的 JSON 文件中的链接的可访问性。它利用 GitHub Actions 来定期调度检查，并将结果输出为 JSON 文件，可以部署到如 Vercel 等平台以便于访问。该项目基于并改进了 [butterfly-check-links](https://github.com/shangskr/butterfly-check-links.git) 项目。
 
