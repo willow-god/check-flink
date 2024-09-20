@@ -30,7 +30,8 @@ jobs:
     - name: Run Python script to check frined-links
       env:
         LIJIANGAPI_TOKEN: ${{ secrets.LIJIANGAPI_TOKEN }}
-      run: python test-friend-api.py
+        PROXY_URL: ${{ secrets.PROXY_URL }}
+      run: python test-friend.py
 
     - name: Configure git
       run: |
