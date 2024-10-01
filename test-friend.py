@@ -38,6 +38,7 @@ api_request_queue = Queue()
 # API 请求处理函数，确保每秒不超过5次请求
 def handle_api_requests():
     while not api_request_queue.empty():
+        time.sleep(0.2)  # 控制API请求速率，确保每秒不超过5次
         item = api_request_queue.get()
         headers = {"User-Agent": user_agent}
         link = item['link']
@@ -48,7 +49,7 @@ def handle_api_requests():
         api_url = api_url_template.format(api_key, link)
 
         try:
-            response = requests.get(api_url, headers=headers, timeout=15, verify=True)
+            response = requests.get(api_url, headers=headers, timeout=30)
             response_data = response.json()
 
             # 提取API返回的code和exec_time
