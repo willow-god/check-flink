@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>友链检测结果</title>
+    <link rel="icon" href="./favicon.ico" type="image/x-icon">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f9f9f9;
+            margin: 0;
+            padding: 0;
+            background: url('https://api.qjqq.cn/api/Img') no-repeat center center fixed;
+            background-size: cover;
+        }
+        .container {
+            width: 90%;
+            max-width: 1200px;
+            margin: 50px auto;
+            padding: 20px;
+            background-color: #ffffffed;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            border-radius: 10px;
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 10px;
+        }
+        #summary {
+            text-align: center;
+            font-size: 1.1em;
+            margin-bottom: 20px;
+            color: #555;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            padding: 12px 15px;
+            border: 1px solid #ddd;
+            text-align: center; /* 将文本居中 */
+        }
+        th {
+            background-color: #f2f2f2;
+            color: #333;
+        }
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        tr:hover {
+            background-color: #f1f1f1;
+        }
+        footer {
+            text-align: center;
+            margin-top: 40px;
+            color: #777;
+        }
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+            .container {
+                width: 95%;
+                margin: 20px auto;
+                padding: 15px;
+            }
+            th, td {
+                padding: 10px 8px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>友链检测结果</h1>
+    <p id="summary"></p>
+    
+    <table>
+        <thead>
+            <tr>
+                <th>名称</th>
+                <th>链接</th>
+                <th>时延 (秒)</th>
+            </tr>
+        </thead>
+        <tbody id="link-table-body">
+            <!-- 表格数据将由JS动态生成 -->
+        </tbody>
+    </table>
+</div>
+
+<footer>
+    <p>友链检测 © 2024</p>
+</footer>
+
+<script>
+    // 从 result.json 文件中获取数据
+    fetch('./result.json')
+        .then(response => response.json())
+        .then(data => {
+            // 提取整体统计信息
+            const summary = `总数: ${data.total_count} | 可访问: ${data.accessible_count} | 不可访问: ${data.inaccessible_count}`;
+            document.getElementById('summary').textContent = summary + ` | 检测时间: ${data.timestamp}`;
+
+            // 动态生成表格数据
+            const tbody = document.getElementById('link-table-body');
+            data.link_status.forEach(item => {
+                const row = document.createElement('tr');
+
+                // 名称列
+                const nameCell = document.createElement('td');
+                nameCell.textContent = item.name;
+                row.appendChild(nameCell);
+
+                // 链接列
+                const linkCell = document.createElement('td');
+                const linkElement = document.createElement('a');
+                linkElement.href = item.link;
+                linkElement.target = "_blank";
+                linkElement.textContent = item.link;
+                linkCell.appendChild(linkElement);
+                row.appendChild(linkCell);
+
+                // 时延列
+                const latencyCell = document.createElement('td');
+                latencyCell.textContent = item.latency >= 0 ? item.latency.toFixed(2) : '不可达';
+                row.appendChild(latencyCell);
+
+                tbody.appendChild(row);
+            });
+        })
+        .catch(error => {
+            console.error('Error loading JSON data:', error);
+            const tbody = document.getElementById('link-table-body');
+            const row = document.createElement('tr');
+            const cell = document.createElement('td');
+            cell.colSpan = 3;
+            cell.textContent = '无法加载数据';
+            cell.style.textAlign = 'center';
+            row.appendChild(cell);
+            tbody.appendChild(row);
+        });
+</script>
+
+</body>
+</html>
