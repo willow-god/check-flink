@@ -23,7 +23,7 @@ else:
     print("在服务器上运行，从环境变量中获取API Key")
 
 api_key = os.getenv("LIJIANGAPI_TOKEN")
-api_url_template = "https://api.76.al/api/web/query?key={}&url={}"
+api_url_template = "https://api.nsmao.net/api/web/query?key={}&url={}"
 
 # 代理链接的模板
 proxy_url = os.getenv("PROXY_URL")
