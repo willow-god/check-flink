@@ -118,21 +118,21 @@
 
 ### 4. 提升准确率
 
-由于该脚本通过action进行，可能会出现由于各种原因导致准确率极低的现象发生，此时我们需要通过各种方式提升检测的准确率，本脚本内置了通过[梨酱API](https://api.76.al/)和[CloudFlare Worker](https://www.cloudflare.com/zh-cn/)转发的方式，可以分别应对屏蔽国外，以及使用国外CDN且防火墙屏蔽Github的两种情况，经过实测，最终准确率基本达到100%。
+由于该脚本通过action进行，可能会出现由于各种原因导致准确率极低的现象发生，此时我们需要通过各种方式提升检测的准确率，本脚本内置了通过[奶思猫API](https://api.nsmao.net/)和[CloudFlare Worker](https://www.cloudflare.com/zh-cn/)转发的方式，可以分别应对屏蔽国外，以及使用国外CDN且防火墙屏蔽Github的两种情况，经过实测，最终准确率基本达到100%。
 
 启用两种方式非常简单，仅需要设置对应的环境变量即可。
 
-1. **梨酱API**:
+1. **奶思猫API**:
 
-   打开[梨酱API](https://api.76.al/)并在右上角注册完成，进入控制台。进入控制台后，点击左边的密钥管理，生成密钥。
+   打开[奶思猫API](https://api.nsmao.net/)并在右上角注册完成，进入控制台。进入控制台后，点击左边的密钥管理，生成密钥。
 
-   ![梨酱api](./images/lijiangapi.png)
+   ![奶思猫api](./images/lijiangapi.png)
 
    然后再在仓库设置->secret->action中，添加`LIJIANGAPI_TOKEN`的密钥即可自动启用。
 
 2. **CloudFlare Worker**：
 
-   其实上面的梨酱api就可以达到很高的准确率了，如果仍然有部分站本身能访问却无法检测，你可以尝试使用下面的方式进行检测：
+   其实上面的奶思猫api就可以达到很高的准确率了，如果仍然有部分站本身能访问却无法检测，你可以尝试使用下面的方式进行检测：
 
    首先部署转发代理，具体教程可以点击[查看文章](https://blog.liushen.fun/posts/dd89adc9/)，不需要绑定域名，因为github action本身就是国外环境。
 
