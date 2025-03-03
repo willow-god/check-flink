@@ -4,7 +4,7 @@
 
 # 友情链接自动检查项目
 
-[示例页面](https://check.zeabur.app) | [详细教程](https://blog.liushen.fun/posts/c2262998/)
+[示例页面](https://check-flink.qyliu.top) | [详细教程](https://blog.liushen.fun/posts/c2262998/)
 
 这个项目旨在自动检查从互联网上托管的 JSON 文件中的链接的可访问性。它利用 GitHub Actions 来定期调度检查，并将结果输出为 JSON 文件，可以部署到如 Vercel 等平台以便于访问。该项目基于并改进了 [butterfly-check-links](https://github.com/shangskr/butterfly-check-links.git) 项目。
 
@@ -128,7 +128,7 @@
 
    ![奶思猫api](./images/lijiangapi.png)
 
-   然后再在仓库设置->secret->action中，添加`LIJIANGAPI_TOKEN`的密钥即可自动启用。
+   然后再在仓库设置->secret->action中，添加`LIJIANGAPI_TOKEN`（原名是梨酱API，改名了懒得换了QAQ，注意变量别错了）的密钥即可自动启用。
 
 2. **CloudFlare Worker**：
 
