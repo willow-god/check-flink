@@ -6,7 +6,7 @@ import os
 import concurrent.futures
 from datetime import datetime
 from queue import Queue
-from dotenv import load_dotenv
+
 
 # 忽略 HTTPS 证书警告
 warnings.filterwarnings("ignore", message="Unverified HTTPS request is being made.*")
@@ -16,7 +16,12 @@ USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTM
 HEADERS = {"User-Agent": USER_AGENT}
 
 # 加载环境变量
-env_loaded = load_dotenv() if os.getenv("LIJIANGAPI_TOKEN") is None else True
+if os.getenv("LIJIANGAPI_TOKEN") is None:
+    print("本地运行，从环境变量中加载并获取环境变量")
+    from dotenv import load_dotenv
+    load_dotenv()
+
+env_loaded = os.getenv("LIJIANGAPI_TOKEN")
 print("本地运行，从环境变量中加载 API Key" if not env_loaded else "在服务器上运行，从环境变量中获取 API Key")
 
 # API Key 和 URL 模板

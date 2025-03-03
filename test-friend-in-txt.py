@@ -14,9 +14,12 @@ warnings.filterwarnings("ignore", message="Unverified HTTPS request is being mad
 # 用户代理字符串，模仿浏览器
 USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36"
 
-# API Key 和 请求URL的模板
-from dotenv import load_dotenv
-load_dotenv()
+# 如果是本地，尝试创建环境变量
+if os.getenv("LIJIANGAPI_TOKEN") is None:
+    print("本地运行，从环境变量中加载并获取环境变量")
+    from dotenv import load_dotenv
+    load_dotenv()
+
 API_KEY = os.getenv("LIJIANGAPI_TOKEN")
 API_URL_TEMPLATE = "https://api.nsmao.net/api/web/query?key={}&url={}" if API_KEY else None
 print("API Key 未提供" if not API_KEY else "API Key 获取成功")
