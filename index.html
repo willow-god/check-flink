@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="zh">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow">
+    <meta name="googlebot" content="noindex">
+    <title>友链状态检测 - GitHub Action 监测</title>
+    <link rel='stylesheet' href='https://chinese-fonts-cdn.deno.dev/packages/jhlst/dist/京華老宋体v1_007/result.css' />
+    <link href="https://cdn.bootcdn.net/ajax/libs/font-awesome/6.7.2/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #2c3e50;
+            --secondary-color: #3498db;
+            --accent-color: #e74c3c;
+            --text-color: #34495e;
+            --background-color: #e7f3ff;
+            --code-background-color: #efefef;
+        }
+
+        .poem-background {
+            position: fixed;
+            bottom: calc(50% - 300px);
+            left: 50%;
+            z-index: -1;
+            opacity: 0.15;
+            width: 2000px;
+            text-align: left;
+            color: #93a1a9;
+            pointer-events: none;
+            line-height: 1.8;
+        }
+
+        .poem-background p {
+            margin: 0;
+            font-size: 4.0rem;
+        }
+
+        body {
+            font-family: 'KingHwa_OldSong', 'Noto Serif SC', serif;
+            margin: 0;
+            padding: 40px 20px;
+            background-color: var(--background-color);
+            color: var(--text-color);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .container {
+            max-width: 900px;
+            width: 100%;
+            padding: 0 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            position: relative;
+        }
+
+        h1 {
+            font-size: 2.8rem;
+            color: var(--primary-color);
+            margin: 20px 0;
+            position: relative;
+        }
+
+        h1::after {
+            content: '';
+            display: block;
+            width: 60%;
+            height: 3px;
+            background: var(--secondary-color);
+            margin: 10px auto 0;
+        }
+
+        .subtitle {
+            font-size: 1.1rem;
+            color: #7f8c8d;
+            max-width: 600px;
+            margin: 0 auto;
+            line-height: 1.6;
+        }
+
+        .total-info {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin-top: 30px;
+        }
+
+        @media (min-width: 1200px) {
+            .total-info {
+                grid-template-columns: repeat(4, 1fr);
+            }
+        }
+
+        @media (max-width: 380px) {
+            .total-info {
+                grid-template-columns: repeat(1, 1fr);
+            }
+        }
+
+        .total-status-card {
+            background: #fff;
+            border-radius: 8px;
+            padding: 15px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            font-size: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.2s ease-in-out;
+        }
+
+        .total-status-card span {
+            font-weight: bold;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .total-status-card:hover {
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .status-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .status-card {
+            display: flex;
+            background: #fff;
+            border-radius: 8px;
+            padding: 15px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            font-size: 1rem;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+            transition: all 0.2s ease-in-out;
+        }
+
+        .status-card:hover {
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .status-link {
+            color: var(--primary-color);
+            text-decoration: none;
+            font-weight: bold;
+            transition: all 0.2s ease-in-out;
+            /* 显示为一行，超出显示为省略号 */
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .status-link:hover {
+            color: var(--secondary-color);
+        }
+
+        .status-dot {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 6px;
+            position: relative;
+        }
+
+        .status-dot::before {
+            content: '';
+            position: absolute;
+            top: -4px;
+            left: -4px;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0% {
+                transform: scale(1);
+                opacity: 1;
+            }
+
+            50% {
+                transform: scale(1.5);
+                opacity: 0.5;
+            }
+
+            100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        .status-normal {
+            background: green;
+        }
+
+        .status-normal::before {
+            background-color: rgba(0, 128, 0, 0.2);
+        }
+
+        .status-slow {
+            background: rgb(255, 200, 0);
+        }
+
+        .status-slow::before {
+            background-color: rgba(255, 174, 0, 0.2);
+        }
+
+        .status-error {
+            background: red;
+        }
+
+        .status-error::before {
+            background-color: rgba(255, 0, 0, 0.2);
+        }
+
+        footer {
+            margin-top: 50px;
+            padding-top: 30px;
+            border-top: 1px solid #ecf0f1;
+            width: 100%;
+            text-align: center;
+            color: #95a5a6;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="poem-background">
+        <p>凤凰台上凤凰游，凤去台空江自流。</p>
+        <p>吴宫花草埋幽径，晋代衣冠成古丘。</p>
+        <p>三山半落青天外，二水中分白鹭洲。</p>
+        <p>总为浮云能蔽日，长安不见使人愁。</p>
+        <p>- —— 节选自 李白《登金陵凤凰台》</p>
+    </div>
+
+    <div class="container">
+        <header class="header">
+            <h1>友链状态检测</h1>
+            <p class="subtitle">基于 GitHub Action 监测友链状态，结合 Cloudflare Worker 和 api.nsmao.net 提高准确率</p>
+        </header>
+
+        <section class="total-info" id="total-info">
+            <div class="total-status-card">
+                <div class="total-status-card-title">
+                    <i class="fa-solid fa-users"></i>
+                    <span>友链总数</span>
+                </div>
+                <span id="total-links">加载中...</span>
+            </div>
+            <div class="total-status-card">
+                <div class="total-status-card-title">
+                    <i class="fa-solid fa-circle-check"></i>
+                    <span>正常友链</span>
+                </div>
+                <span id="normal-links">加载中...</span>
+            </div>
+            <div class="total-status-card">
+                <div class="total-status-card-title">
+                    <i class="fa-solid fa-circle-exclamation"></i>
+                    <span>慢速友链</span>
+                </div>
+                <span id="slow-links">加载中...</span>
+            </div>
+            <div class="total-status-card">
+                <div class="total-status-card-title">
+                    <i class="fa-solid fa-circle-xmark"></i>
+                    <span>错误友链</span>
+                </div>
+                <span id="error-links">加载中...</span>
+            </div>
+        </section>
+
+        <hr style="width: 100%; margin: 15px 0; border: 0; border-top: 2px solid #00000021;">
+
+        <section class="status-grid" id="status-container"></section>
+
+        <footer>
+            <script defer src="https://cn.vercount.one/js"></script>
+            <div>页面访问次数 <span id="vercount_value_page_pv">加载中...</span></div>
+            <div>网站总请求量 <span id="vercount_value_site_pv">加载中...</span></div>
+            <div>独立访客统计 <span id="vercount_value_site_uv">加载中...</span></div>
+        </footer>
+    </div>
+
+    <script>
+        fetch('/result.json')
+            .then(response => response.json())
+            .then(data => {
+                const container = document.getElementById('status-container');
+                let statusHTML = '';
+                const sortedLinks = data.link_status.sort((a, b) => a.latency === -1 ? -1 : b.latency === -1 ? 1 : b.latency - a.latency);
+
+                let totalLinks = 0;
+                let normalLinks = 0;
+                let slowLinks = 0;
+                let errorLinks = 0;
+
+                sortedLinks.forEach(link => {
+                    totalLinks++;
+                    let statusClass = 'status-normal';
+                    if (link.latency === -1) {
+                        statusClass = 'status-error';
+                        errorLinks++;
+                    } else if (link.latency > 4) {
+                        statusClass = 'status-slow';
+                        slowLinks++;
+                    } else {
+                        normalLinks++;
+                    }
+                    statusHTML += `<div class="status-card">
+                        <a class="status-link" href="${link.link}" target="_blank">${link.name}</a>
+                        <span class="status-dot ${statusClass}"></span>
+                    </div>`;
+                });
+
+                container.innerHTML = statusHTML;
+
+                document.getElementById('total-links').textContent = totalLinks;
+                document.getElementById('normal-links').textContent = normalLinks;
+                document.getElementById('slow-links').textContent = slowLinks;
+                document.getElementById('error-links').textContent = errorLinks;
+            })
+            .catch(error => console.error('Error loading status:', error));
+    </script>
+</body>
+
+</html>
