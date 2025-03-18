@@ -15,23 +15,47 @@ jobs:
 
     steps:
     - name: Pull latest repository
-      uses: actions/checkout@v2
+      uses: actions/checkout@v4
+
+    - name: Cache pip packages
+      uses: actions/cache@v4
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
 
     - name: Install python
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v5
       with:
-        python-version: '3.x'
+        python-version: '3.12'
 
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install requests
+        pip install -r requirements.txt
+    
+    - name: Download result.json artifact
+      uses: dawidd6/action-download-artifact@v6
+      with:
+        github_token: ${{secrets.GITHUB_TOKEN}}
+        branch: main
+        name: 'result_json'
+        path: './'
+        if_no_artifact_found: warn
 
     - name: Run Python script to check frined-links
       env:
         LIJIANGAPI_TOKEN: ${{ secrets.LIJIANGAPI_TOKEN }}
         PROXY_URL: ${{ secrets.PROXY_URL }}
       run: python test-friend.py
+
+    - name: Upload result.json as artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: 'result_json'
+        path: './result.json'
+        retention-days: 90
 
     - name: Configure git
       run: |
