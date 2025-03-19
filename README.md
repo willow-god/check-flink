@@ -1,4 +1,4 @@
-![](./images/cover.png)
+![](./static/pic-doc/show.png)
 
 ---
 
@@ -126,7 +126,7 @@
 
    打开[奶思猫API](https://api.nsmao.net/)并在右上角注册完成，进入控制台。进入控制台后，点击左边的密钥管理，生成密钥。
 
-   ![奶思猫api](./images/lijiangapi.png)
+   ![奶思猫api](./static/pic-doc/lijiangapi.png)
 
    然后再在仓库设置->secret->action中，添加`LIJIANGAPI_TOKEN`（原名是梨酱API，改名了懒得换了QAQ，注意变量别错了）的密钥即可自动启用。
 
