@@ -68,6 +68,7 @@ def check_link(item):
     return item, -1
 
 def handle_api_requests():
+    updated_results = []
     while not api_request_queue.empty():
         time.sleep(0.2)
         item = api_request_queue.get()
@@ -92,7 +93,11 @@ def handle_api_requests():
             print(f"API 请求失败: {link}")
             item['latency'] = -1
         
+        updated_results.append(item)  # 记录更新后的结果
         time.sleep(0.2)
+
+    return updated_results
+
 
 def main():
     file_path = './link.csv'
@@ -105,7 +110,15 @@ def main():
     with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
         results = list(executor.map(check_link, data))
     
-    handle_api_requests()
+    # 处理 API 请求，并获取更新后的结果
+    updated_api_results = handle_api_requests()
+
+    # 用 API 结果覆盖原来的结果
+    for updated_item in updated_api_results:
+        for idx, (item, latency) in enumerate(results):
+            if item['link'] == updated_item['link']:
+                results[idx] = (item, updated_item['latency'])  # 更新 latency
+                break
     
     link_status = []
     for item, latency in results:
