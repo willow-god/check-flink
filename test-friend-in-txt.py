@@ -47,9 +47,6 @@ def fetch_json_data(file_path):
     with open(file_path, newline='', encoding='utf-8') as csvfile:
         return [{'name': row[0], 'link': row[1]} for row in csv.reader(csvfile) if len(row) == 2]
 
-def is_likely_garbled(text):
-    return any(ord(char) > 127 for char in text) if text else False
-
 def check_link(item):
     link = item['link']
     
@@ -87,9 +84,9 @@ def handle_api_requests():
             
             if (response_data.get('code') == 200 and
                 response_data.get('data') and (
-                    (response_data.get('data').get('title') not in ["", None] and not is_likely_garbled(response_data['data']['title'])) or
-                    (response_data.get('data').get('keywords') not in ["", None] and not is_likely_garbled(response_data['data']['title'])) or
-                    (response_data.get('data').get('description') not in ["", None] and not is_likely_garbled(response_data['data']['title']))
+                    response_data.get('data').get('title') not in ["", None] and
+                    (response_data.get('data').get('keywords') not in ["", None] or
+                    response_data.get('data').get('description') not in ["", None])
                 )):
                 latency = round(response_data.get('exec_time', -1), 2)
                 print(f"成功通过 API 访问 {link}, 延迟 {latency} 秒")
