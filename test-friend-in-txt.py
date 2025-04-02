@@ -84,9 +84,9 @@ def handle_api_requests():
             
             if (response_data.get('code') == 200 and
                 response_data.get('data') and (
-                    response_data.get('data').get('title') not in ["", None] and
-                    (response_data.get('data').get('keywords') not in ["", None] or
-                    response_data.get('data').get('description') not in ["", None])
+                    response_data.get('data').get('title') not in ["", None] or
+                    response_data.get('data').get('keywords') not in ["", None] or
+                    response_data.get('data').get('description') not in ["", None]
                 )):
                 latency = round(response_data.get('exec_time', -1), 2)
                 print(f"成功通过 API 访问 {link} , 延迟 {latency} 秒")
