@@ -57,6 +57,8 @@ def fetch_json_data(url):
         print(f"无法获取 JSON 数据: {e}")
         return None
 
+def is_likely_garbled(text):
+    return any(ord(char) > 127 for char in text) if text else False
 
 def check_link(item):
     """检查友链可访问性"""
@@ -96,9 +98,18 @@ def handle_api_requests():
             response = requests.get(API_URL_TEMPLATE.format(link), headers=HEADERS, timeout=30)
             response_data = response.json()
 
-            if response_data.get('code') == 200:
+            if (response_data.get('code') == 200 and
+                response_data.get('data') and (
+                    (response_data.get('data').get('title') not in ["", None] and not is_likely_garbled(response_data['data']['title'])) or
+                    (response_data.get('data').get('keywords') not in ["", None] and not is_likely_garbled(response_data['data']['title'])) or
+                    (response_data.get('data').get('description') not in ["", None] and not is_likely_garbled(response_data['data']['title']))
+                )):
                 latency = round(response_data.get('exec_time', -1), 2)
                 print(f"成功通过 API 访问 {link}, 延迟 {latency} 秒")
+                print(f"API 返回数据: {response_data.get('data')}")
+                print(f"API 返回标题: {response_data.get('data').get('title')}")
+                print(f"API 返回关键词: {response_data.get('data').get('keywords')}")
+                print(f"API 返回描述: {response_data.get('data').get('description')}")
                 item['latency'] = latency
             else:
                 print(f"API 访问失败: {link}，错误代码 {response_data.get('code')}")
