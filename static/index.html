@@ -297,6 +297,7 @@
         <header class="header">
             <h1>友链状态检测</h1>
             <p class="subtitle">基于 GitHub Action 监测友链状态，结合 Cloudflare Worker 和 api.nsmao.net 提高准确率</p>
+            <p class="subtitle">更新时间：<span id="update-time"></span></p>
         </header>
 
         <section class="total-info" id="total-info">
@@ -352,6 +353,10 @@
         fetch('/result.json')
             .then(response => response.json())
             .then(data => {
+                // 更新更新时间
+                const updateTime = data.timestamp;
+                const updateTimeElement = document.getElementById('update-time');
+                updateTimeElement.textContent = updateTime;
                 const container_error = document.getElementById('status-container-error');
                 const container_other = document.getElementById('status-container-other');
                 let statusHTML = '';

@@ -59,7 +59,7 @@ def check_link(item):
             latency = round(time.time() - start_time, 2)
             
             if response.status_code == 200:
-                print(f"成功通过 {method} {link}, 延迟 {latency} 秒")
+                print(f"成功通过 {method} {link} , 延迟 {latency} 秒")
                 return item, latency
         except requests.RequestException:
             print(f"{method} 失败: {link}")
@@ -89,10 +89,10 @@ def handle_api_requests():
                     response_data.get('data').get('description') not in ["", None])
                 )):
                 latency = round(response_data.get('exec_time', -1), 2)
-                print(f"成功通过 API 访问 {link}, 延迟 {latency} 秒")
+                print(f"成功通过 API 访问 {link} , 延迟 {latency} 秒")
                 item['latency'] = latency
             else:
-                print(f"API 访问失败: {link}，错误代码 {response_data.get('code')}")
+                print(f"API 访问失败: {link} , 错误代码 {response_data.get('code')}")
                 item['latency'] = -1
         except requests.RequestException:
             print(f"API 请求失败: {link}")
