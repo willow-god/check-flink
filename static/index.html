@@ -254,6 +254,16 @@
         color: #95a5a6;
       }
 
+      footer a {
+        color: #95a5a6;
+        text-decoration: none;
+        transition: all 0.2s ease-in-out;
+      }
+
+      footer a:hover {
+        color: var(--secondary-color);
+      }
+
       .github-icon {
         position: fixed;
         bottom: 20px;
@@ -318,8 +328,8 @@
       <header class="header">
         <h1>友链状态检测</h1>
         <p class="subtitle">
-          基于 GitHub Action 监测友链状态，结合 Cloudflare Worker 和
-          api.nsmao.net 提高准确率
+          基于 GitHub Action 监测友链状态，结合 Cloudflare Worker 和 v2.xxapi.cn
+          提高准确率
         </p>
         <p class="subtitle">更新时间：<span id="update-time"></span></p>
       </header>
@@ -382,15 +392,64 @@
 
       <footer>
         <script defer src="https://cn.vercount.one/js"></script>
-        <div>
-          页面访问次数 <span id="vercount_value_page_pv">加载中...</span>
+
+        <div style="margin-bottom: 0.5em">
+          网站总请求量：<span id="vercount_value_site_pv">🤕</span> |
+          独立访客数：<span id="vercount_value_site_uv">🤕</span>
         </div>
-        <div>
-          网站总请求量 <span id="vercount_value_site_pv">加载中...</span>
+
+        <div style="margin-bottom: 0.5em">
+          Powered by
+          <a
+            href="https://github.com/features/actions"
+            target="_blank"
+            rel="nofollow noopener noreferrer"
+            >GitHub Actions</a
+          >
+          |
+          <a
+            href="https://workers.cloudflare.com/"
+            target="_blank"
+            rel="nofollow noopener noreferrer"
+            >Cloudflare Workers</a
+          >
+          |
+          <a
+            href="https://xxapi.cn/"
+            target="_blank"
+            rel="nofollow noopener noreferrer"
+            >小小API</a
+          >
+          |
+          <a
+            href="https://api.nsmao.net/"
+            target="_blank"
+            rel="nofollow noopener noreferrer"
+            >奶思猫</a
+          >
         </div>
+
         <div>
-          独立访客统计 <span id="vercount_value_site_uv">加载中...</span>
+          项目地址: <a
+            href="https://github.com/willow-god/check-flink"
+            target="_blank"
+            rel="nofollow noopener noreferrer"
+            >check-flink</a
+          >
+          | MIT License © <span id="year"></span> |
+          <a
+            href="https://www.liushen.fun/"
+            target="_blank"
+            rel="nofollow noopener noreferrer"
+            >LiuShen</a
+          >
         </div>
+
+        <script>
+          // 动态年份显示
+          document.getElementById("year").textContent =
+            new Date().getFullYear();
+        </script>
       </footer>
     </div>
 
