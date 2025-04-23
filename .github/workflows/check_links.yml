@@ -48,14 +48,14 @@ jobs:
       env:
         LIJIANGAPI_TOKEN: ${{ secrets.LIJIANGAPI_TOKEN }}
         PROXY_URL: ${{ secrets.PROXY_URL }}
-      run: python test-friend.py
+      run: python main.py
 
     - name: Upload result.json as artifact
       uses: actions/upload-artifact@v4
       with:
         name: 'result_json'
         path: './result.json'
-        retention-days: 90
+        retention-days: 10
 
     - name: Configure git
       run: |
