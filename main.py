@@ -112,15 +112,11 @@ def handle_api_requests():
         try:
             response = requests.get(api_url, headers=HEADERS, timeout=30)
             res_json = response.json()
-            if res_json.get("code") == 200 and res_json.get("data") == 200:
+            if int(res_json.get("code")) == 200 and int(res_json.get("data")) == 200:
                 logging.info(f"[API] 成功访问: {link} ，状态码 200")
                 item['latency'] = -2
             else:
-                if res_json.get("data") != 200:
-                    result_data = res_json.get("data") if res_json.get("data") else "无数据"
-                    logging.warning(f"[API] 返回异常数据: {link} -> {result_data}")
-                else:
-                    logging.warning(f"[API] 返回异常状态码: {link} -> {res_json.get('code')}")
+                logging.warning(f"[API] 返回异常状态码: {link} -> [{res_json.get('code')}, {res_json.get('data')}]")
                 item['latency'] = -1
         except requests.RequestException as e:
             logging.error(f"[API] 请求失败: {link} ，错误: {e}")
