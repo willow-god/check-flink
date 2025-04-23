@@ -48,6 +48,7 @@ def is_url(path):
     return urlparse(path).scheme in ("http", "https")
 
 def fetch_origin_data(origin_path):
+    logging.info(f"正在读取数据源: {origin_path}")
     try:
         if is_url(origin_path):
             response = requests.get(origin_path, headers=HEADERS, timeout=15)

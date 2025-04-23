@@ -1,6 +1,10 @@
 name: Check Links and Generate JSON
 
 on:
+  push:
+    branches:
+      - main
+
   schedule:
     - cron: '0 1 * * *'
     - cron: '0 13 * * *'
@@ -46,8 +50,8 @@ jobs:
 
     - name: Run Python script to check frined-links
       env:
-        LIJIANGAPI_TOKEN: ${{ secrets.LIJIANGAPI_TOKEN }}
         PROXY_URL: ${{ secrets.PROXY_URL }}
+        SOURCE_URL: ${{ secrets.SOURCE_URL }}
       run: python main.py
 
     - name: Upload result.json as artifact
