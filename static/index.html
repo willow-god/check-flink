@@ -146,7 +146,7 @@
         grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
       }
 
-      .fail-days {
+      .fail_counts {
         margin-right: 10px;
         color: #000000a5;
       }
@@ -428,7 +428,7 @@
             if (link.latency === -1) {
               statusClass = "status-error";
               errorLinks++;
-              extraInfo = `<span class="fail-days">已持续${link.failed_days}次</span>`;
+              extraInfo = `<span class="fail_counts">已持续${link.fail_count}次</span>`;
               errorLinksHTML += `<div class="status-card">
                             <a class="status-link" href="${link.link}" target="_blank" rel="noopener noreferrer noreferrer">${link.name}</a>
                             <div class="fail-details">

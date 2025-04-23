@@ -2,6 +2,8 @@
 
 ---
 
+> 近期进行了重构，将两种检测放在了一起，所有需要配置的数据放在了环境变量中，如果需要csv格式，请自行新建csv文件，这样不会影响上游直接同步内容，如果更新请根据下面的说明进行修改！
+
 # 友情链接自动检查项目
 
 [示例页面](https://check-flink.qyliu.top) | [详细教程](https://blog.liushen.fun/posts/c2262998/)
@@ -15,26 +17,29 @@
 - 并发处理以提高链接检查效率
 - 结果输出为 JSON 格式，便于与 Web 应用集成
 - 使用 cron 作业进行定时执行
+- 使用 Cloudflare Worker 和 xxapi 提高检测准确率
+- 可以统计连续失效次数，方便站长进行判断
 
-## 项目结构
+> 注意，该项目结果仅供参考，可能会因为各种原因无法检测到对应站点数据，请不要将该数据作为友链可达性的唯一评判标准
+
+## 主要文件结构
 
 ```plaintext
 .
 ├── .github
 │   └── workflows
 │       └── check_links.yml
-├── test-friend.py
-├── test-friend-in-txt.py
+├── main.py
+├── .env  # 环境变量文件，可以设置在仓库机密中。
 ├── result.json
-├── link.csv
+├── link.csv  # 可选，如有需要，自行创建
 └── README.md
 ```
 
 ## 文件说明
 
 - `.github/workflows/check_links.yml`: GitHub Actions 的工作流配置文件，用于定时执行链接检查脚本。
-- `test-friend.py`: 主链接检查脚本，负责检查 JSON 数据中的链接可访问性并生成结果。
-- `test-friend-in-txt.py`: 从 `link.txt` 文件中读取链接并进行可访问性检查，生成结果。
+- `main.py`: 主链接检查脚本，负责检查来源数据中的链接可访问性并生成结果。
 - `result.json`: 链接检查结果的输出文件。
 - `link.csv`: 存放待检查链接的文本文件(可选方式之一)。
 - `README.md`: 项目说明文件。
@@ -59,14 +64,14 @@
 
 ### 3. 选择抓取方式
 
-#### （1）JSON（比较复杂，但是后续无需再在仓库中修改，等于维护一个在线友链列表）
+#### （1）JSON（比较复杂，但是后续无需再在仓库中修改，等于维护一个在线友链列表，如果可以实现，强烈推荐）
 
-- 修改 `test-friend.py` 文件内的 JSON 文件地址。
+- 在变量中设置`SOURCE_URL`，链接填写`json`文件链接地址，比如：
 
-  ```python
-  # 目标JSON数据的URL
-  json_url = 'https://blog.example.com/flink_count.json'
+  ```env
+  SOURCE_URL=https://blog.liushen.fun/flink_count.json
   ```
+
 - 具体所需JSON文件格式示例：
 
   ```json
@@ -92,25 +97,24 @@
 
 - JSON 具体生成教程请看[详细教程](https://blog.liushen.fun/posts/c2262998/)。
 
-#### （2）csv（简单，推荐，全适用）
+#### （2）csv（简单，全适用）
 
-- 修改 `link.csv` 中的内容，格式如下，请修改为你自己的数据：
+- 在变量中设置`SOURCE_URL`，链接填写`csv`文件链接地址，可以是相对地址或者网络地址，比如：
+
+  ```env
+  SOURCE_URL=./link.csv # 相对于项目根目录
+  ```
+
+- 创建并修改 `link.csv` 中的内容，格式如下，请修改为你自己的数据：
+
   ```plaintext
-  清羽飞扬,https://blog.qyliu.top/
+  清羽飞扬,https://blog.liushen.fun/
   ChrisKim,https://www.zouht.com/
   Akilar,https://akilar.top/
   张洪Heo,https://blog.zhheo.com/
   ```
 
-- 修改 Action 任务中，运行 Python 脚本部分，改为运行 TXT 脚本文件：
-
-  ```yaml
-   - name: Run Python script to check frined-links
-     env:
-        LIJIANGAPI_TOKEN: ${{ secrets.LIJIANGAPI_TOKEN }}
-        PROXY_URL: ${{ secrets.PROXY_URL }}
-     run: python test-friend-in-txt.py
-  ```
+  本项目提供了示例数据，如果不清楚可以进行修改以匹配。
 
 **注**：两种抓取方式最终获得结果相同，所以不影响后面的操作。
 
@@ -122,17 +126,23 @@
 
 启用两种方式非常简单，仅需要设置对应的环境变量即可。
 
-1. **奶思猫API**:
+1. **小小API**:
 
-   打开[奶思猫API](https://api.nsmao.net/)并在右上角注册完成，进入控制台。进入控制台后，点击左边的密钥管理，生成密钥。
+   > 2025-04-23更新：使用xxapi，可以无需token进行请求，本项目已进行限速，对api请求每秒不超过10次，通常为5次（并行上限一秒十次，api请求每个请求之间相隔0.2s）
 
-   ![奶思猫api](./static/pic-doc/lijiangapi.png)
+   小小api已经默认内置，无需任何配置，如有违反产品条例，请联系我删除。
 
-   然后再在仓库设置->secret->action中，添加`LIJIANGAPI_TOKEN`（原名是梨酱API，改名了懒得换了QAQ，注意变量别错了）的密钥即可自动启用。
+   API仅在直接访问，代理访问均无法请求的情况下，进行检测，并且经过了严格的兵法限制，不会造成大规模大量快速请求。
+
+   ~~打开[奶思猫API](https://api.nsmao.net/)并在右上角注册完成，进入控制台。进入控制台后，点击左边的密钥管理，生成密钥。~~
+
+   <!-- ![奶思猫api](./static/pic-doc/lijiangapi.png) -->
+
+   ~~然后再在仓库设置->secret->action中，添加`LIJIANGAPI_TOKEN`（原名是梨酱API，改名了懒得换了QAQ，注意变量别错了）的密钥即可自动启用。~~
 
 2. **CloudFlare Worker**：
 
-   其实上面的奶思猫api就可以达到很高的准确率了，如果仍然有部分站本身能访问却无法检测，你可以尝试使用下面的方式进行检测：
+   其实上面的xxapi就可以达到很高的准确率了，如果仍然有部分站本身能访问却无法检测，你可以尝试使用下面的方式进行检测：
 
    首先部署转发代理，具体教程可以点击[查看文章](https://blog.liushen.fun/posts/dd89adc9/)，不需要绑定域名，因为github action本身就是国外环境。
 
@@ -166,7 +176,7 @@
 该项目最终文件结果为 JSON 格式，通过该文件可以获取最新的链接检查结果。您可以使用任何支持 HTTP(S) 请求的编程语言或工具来获取此 JSON 数据，API 地址如下（用本站部署的作为示例）：
 
 ```txt
-https://check.zeabur.app/result.json
+https://check-flink.qyliu.top/result.json
 ```
 
 #### `result.json` 格式：
@@ -256,7 +266,7 @@ https://check.zeabur.app/result.json
 
 #### 展示到友链卡片
 
-除以上展示为单独页面之外，还可以通过JavaScript对比友链结果，生成友链卡片小标签，大致效果可以看[清羽飞扬の友链页面](https://blog.qyliu.top/link/)，示例代码如下：
+除以上展示为单独页面之外，还可以通过JavaScript对比友链结果，生成友链卡片小标签，大致效果可以看[清羽飞扬の友链页面](https://blog.liushen.fun/link/)，示例代码如下：
 
 ```html
 <style>
@@ -352,11 +362,11 @@ function addStatusTagsWithCache(jsonUrl) {
     fetchDataAndUpdateUI();
 }
 setTimeout(() => {
-    addStatusTagsWithCache('https://check.zeabur.app/result.json');
+    addStatusTagsWithCache('https://check-flink.qyliu.top/result.json');
 }, 0);
 </script>
 ```
 
 ### 7. 联系作者
 
-如果有疑问可通过[个人主页](https://www.qyliu.top)或者提 issue 进行联系，非常欢迎。
+如果有疑问可通过[个人主页](https://www.liushen.fun)或者提 issue 进行联系，非常欢迎。
