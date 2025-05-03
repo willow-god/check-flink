@@ -34,9 +34,20 @@ HEADERS = {
     "X-Check-Flink": "1.0"
 }
 
+def is_url(path):
+    return urlparse(path).scheme in ("http", "https")
 
-PROXY_URL_TEMPLATE = f"{os.getenv('PROXY_URL')}{{}}" if os.getenv("PROXY_URL") else None
-SOURCE_URL = os.getenv("SOURCE_URL", "./link.csv")  # 默认本地文件
+# 获取环境变量配置
+PROXY_URL = os.getenv("PROXY_URL", None)
+if PROXY_URL and not is_url(PROXY_URL):
+    logging.warning("代理 URL 格式错误，使用默认值 None")
+    PROXY_URL = None
+
+PROXY_URL_TEMPLATE = f"{PROXY_URL}{{}}" if PROXY_URL else None
+SOURCE_URL = os.getenv("SOURCE_URL", "./link.csv")  # 默认本地文件，获取环境变量
+if SOURCE_URL and not is_url(SOURCE_URL):
+    logging.warning("未提供数据源 URL，使用默认值 ./link.csv")
+    SOURCE_URL = "./link.csv"
 RESULT_FILE = "./result.json"
 api_request_queue = Queue()
 
@@ -69,9 +80,6 @@ def load_previous_results():
 def save_results(data):
     with open(RESULT_FILE, "w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False, indent=4)
-
-def is_url(path):
-    return urlparse(path).scheme in ("http", "https")
 
 def fetch_origin_data(origin_path):
     logging.info(f"正在读取数据源: {origin_path}")
