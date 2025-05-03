@@ -19,8 +19,31 @@ logging.basicConfig(
 
 warnings.filterwarnings("ignore", message="Unverified HTTPS request is being made.*")
 
-USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36"
-HEADERS = {"User-Agent": USER_AGENT}
+# 请求头统一配置
+HEADERS = {
+    "User-Agent": (
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+        "AppleWebKit/537.36 (KHTML, like Gecko) "
+        "Chrome/123.0.0.0 Safari/537.36 "
+        "(check-flink/1.0; +https://github.com/willow-god/check-flink)"
+    ),
+    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+    "Accept-Language": "zh-CN,zh;q=0.9",
+    "Accept-Encoding": "gzip, deflate, br",
+    "Connection": "keep-alive",
+    "X-Check-Flink": "1.0"
+}
+
+RAW_HEADERS = {  # 仅用于获取原始数据，防止接收到Accept-Language等头部导致乱码
+    "User-Agent": (
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+        "AppleWebKit/537.36 (KHTML, like Gecko) "
+        "Chrome/123.0.0.0 Safari/537.36 "
+        "(check-flink/1.0; +https://github.com/willow-god/check-flink)"
+    ),
+    "X-Check-Flink": "1.0"
+}
+
 PROXY_URL_TEMPLATE = f"{os.getenv('PROXY_URL')}{{}}" if os.getenv("PROXY_URL") else None
 SOURCE_URL = os.getenv("SOURCE_URL", "./link.csv")  # 默认本地文件
 RESULT_FILE = "./result.json"
@@ -28,8 +51,20 @@ api_request_queue = Queue()
 
 if PROXY_URL_TEMPLATE:
     logging.info("代理 URL 获取成功，代理协议: %s", PROXY_URL_TEMPLATE.split(":")[0])
+
 else:
     logging.info("未提供代理 URL")
+
+def request_url(session, url, headers=HEADERS, desc="", timeout=15, verify=True, **kwargs):
+    """统一封装的 GET 请求函数"""
+    try:
+        start_time = time.time()
+        response = session.get(url, headers=headers, timeout=timeout, verify=verify, **kwargs)
+        latency = round(time.time() - start_time, 2)
+        return response, latency
+    except requests.RequestException as e:
+        logging.warning(f"[{desc}] 请求失败: {url}，错误如下: \n================================================================\n{e}\n================================================================")
+        return None, -1
 
 def load_previous_results():
     if os.path.exists(RESULT_FILE):
@@ -51,9 +86,9 @@ def fetch_origin_data(origin_path):
     logging.info(f"正在读取数据源: {origin_path}")
     try:
         if is_url(origin_path):
-            response = requests.get(origin_path, headers=HEADERS, timeout=15)
-            response.raise_for_status()
-            content = response.text
+            with requests.Session() as session:
+                response, _ = request_url(session, origin_path, headers=RAW_HEADERS, desc="数据源")
+                content = response.text if response else ""
         else:
             with open(origin_path, "r", encoding="utf-8") as f:
                 content = f.read()
@@ -67,7 +102,7 @@ def fetch_origin_data(origin_path):
             logging.info("成功解析 JSON 格式数据")
             return data['link_list']
         elif isinstance(data, list):
-            logging.info("成功解析 CSV 格式数据")
+            logging.info("成功解析 JSON 数组格式数据")
             return data
     except json.JSONDecodeError:
         pass
@@ -80,46 +115,45 @@ def fetch_origin_data(origin_path):
         logging.error(f"CSV 解析失败: {e}")
         return []
 
-def check_link(item):
+def check_link(item, session):
     link = item['link']
     for method, url in [("直接访问", link), ("代理访问", PROXY_URL_TEMPLATE.format(link) if PROXY_URL_TEMPLATE else None)]:
-        if not url:
+        if not url or not is_url(url):
             logging.warning(f"[{method}] 无效链接: {link}")
             continue
-        try:
-            start_time = time.time()
-            response = requests.get(url, headers=HEADERS, timeout=15, verify=True)
-            latency = round(time.time() - start_time, 2)
-
-            if response.status_code == 200:
-                logging.info(f"[{method}] 成功访问: {link} ，延迟 {latency} 秒")
-                return item, latency
-            else:
-                logging.warning(f"[{method}] 返回异常状态码: {link} -> {response.status_code}")
-        except requests.RequestException:
-            logging.warning(f"[{method}] 访问失败: {link}")
+        response, latency = request_url(session, url, desc=method)
+        if response and response.status_code == 200:
+            logging.info(f"[{method}] 成功访问: {link} ，延迟 {latency} 秒")
+            return item, latency
+        elif response and response.status_code != 200:
+            logging.warning(f"[{method}] 状态码异常: {link} -> {response.status_code}")
+        else:
+            logging.warning(f"[{method}] 请求失败，Response 无效: {link}")
 
     api_request_queue.put(item)
     return item, -1
 
-def handle_api_requests():
+def handle_api_requests(session):
     results = []
     while not api_request_queue.empty():
         time.sleep(0.2)
         item = api_request_queue.get()
         link = item['link']
         api_url = f"https://v2.xxapi.cn/api/status?url={link}"
-        try:
-            response = requests.get(api_url, headers=HEADERS, timeout=30)
-            res_json = response.json()
-            if int(res_json.get("code")) == 200 and int(res_json.get("data")) == 200:
-                logging.info(f"[API] 成功访问: {link} ，状态码 200")
-                item['latency'] = -2
-            else:
-                logging.warning(f"[API] 返回异常状态码: {link} -> [{res_json.get('code')}, {res_json.get('data')}]")
+        response, _ = request_url(session, api_url,headers=RAW_HEADERS, desc="API 检查", timeout=30)
+        if response:
+            try:
+                res_json = response.json()
+                if int(res_json.get("code")) == 200 and int(res_json.get("data")) == 200:
+                    logging.info(f"[API] 成功访问: {link} ，状态码 200")
+                    item['latency'] = -2
+                else:
+                    logging.warning(f"[API] 状态异常: {link} -> [{res_json.get('code')}, {res_json.get('data')}]")
+                    item['latency'] = -1
+            except Exception as e:
+                logging.error(f"[API] 解析响应失败: {link}，错误: {e}")
                 item['latency'] = -1
-        except requests.RequestException as e:
-            logging.error(f"[API] 请求失败: {link} ，错误: {e}")
+        else:
             item['latency'] = -1
         results.append(item)
     return results
@@ -133,15 +167,16 @@ def main():
 
         previous_results = load_previous_results()
 
-        with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
-            results = list(executor.map(check_link, link_list))
+        with requests.Session() as session:
+            with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
+                results = list(executor.map(lambda item: check_link(item, session), link_list))
 
-        updated_api_results = handle_api_requests()
-        for updated_item in updated_api_results:
-            for idx, (item, latency) in enumerate(results):
-                if item['link'] == updated_item['link']:
-                    results[idx] = (item, updated_item['latency'])
-                    break
+            updated_api_results = handle_api_requests(session)
+            for updated_item in updated_api_results:
+                for idx, (item, latency) in enumerate(results):
+                    if item['link'] == updated_item['link']:
+                        results[idx] = (item, updated_item['latency'])
+                        break
 
         current_links = {item['link'] for item in link_list}
         link_status = []
@@ -156,7 +191,6 @@ def main():
 
                 prev_entry = next((x for x in previous_results.get("link_status", []) if x.get("link") == link), {})
                 prev_fail_count = prev_entry.get("fail_count", 0)
-
                 fail_count = prev_fail_count + 1 if latency == -1 else 0
 
                 link_status.append({
@@ -168,7 +202,6 @@ def main():
             except Exception as e:
                 logging.error(f"处理链接时发生错误: {item}, 错误: {e}")
 
-        # 保留在当前数据源中的链接
         link_status = [entry for entry in link_status if entry["link"] in current_links]
 
         accessible = sum(1 for x in link_status if x["latency"] != -1)
