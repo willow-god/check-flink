@@ -82,13 +82,12 @@ def save_results(data):
         json.dump(data, f, ensure_ascii=False, indent=4)
 
 def fetch_origin_data(origin_path):
-    # 输出数据源前十个字符，方便进行调试
-    logging.info(f"正在读取数据源: {origin_path[:10]}")
+    logging.info(f"正在读取数据源: {origin_path}")
     try:
         if is_url(origin_path):
-            with requests.Session() as session:
-                response, _ = request_url(session, origin_path, desc="数据源")
-                content = response.text if response else ""
+            response = requests.get(origin_path, headers=HEADERS, timeout=15)
+            response.raise_for_status()
+            content = response.text
         else:
             with open(origin_path, "r", encoding="utf-8") as f:
                 content = f.read()
@@ -102,7 +101,7 @@ def fetch_origin_data(origin_path):
             logging.info("成功解析 JSON 格式数据")
             return data['link_list']
         elif isinstance(data, list):
-            logging.info("成功解析 JSON 数组格式数据")
+            logging.info("成功解析 CSV 格式数据")
             return data
     except json.JSONDecodeError:
         pass
