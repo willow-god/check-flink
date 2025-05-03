@@ -48,7 +48,9 @@ jobs:
       env:
         PROXY_URL: ${{ secrets.PROXY_URL }}
         SOURCE_URL: ${{ secrets.SOURCE_URL }}
-      run: python main.py
+      run: |
+        echo "SOURCE_URL: $SOURCE_URL"
+        python main.py
 
     - name: Upload result.json as artifact
       uses: actions/upload-artifact@v4

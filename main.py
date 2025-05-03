@@ -82,7 +82,8 @@ def save_results(data):
         json.dump(data, f, ensure_ascii=False, indent=4)
 
 def fetch_origin_data(origin_path):
-    logging.info(f"正在读取数据源: {origin_path}")
+    # 输出数据源前十个字符，方便进行调试
+    logging.info(f"正在读取数据源: {origin_path[:10]}")
     try:
         if is_url(origin_path):
             with requests.Session() as session:
