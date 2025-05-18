@@ -140,13 +140,13 @@ def handle_api_requests(session):
         item = api_request_queue.get()
         link = item['link']
         api_url = f"https://v2.xxapi.cn/api/status?url={link}"
-        response, _ = request_url(session, api_url,headers=RAW_HEADERS, desc="API 检查", timeout=30)
+        response, latency = request_url(session, api_url,headers=RAW_HEADERS, desc="API 检查", timeout=30)
         if response:
             try:
                 res_json = response.json()
                 if int(res_json.get("code")) == 200 and int(res_json.get("data")) == 200:
                     logging.info(f"[API] 成功访问: {link} ，状态码 200")
-                    item['latency'] = -2
+                    item['latency'] = latency
                 else:
                     logging.warning(f"[API] 状态异常: {link} -> [{res_json.get('code')}, {res_json.get('data')}]")
                     item['latency'] = -1
