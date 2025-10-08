@@ -25,7 +25,7 @@ HEADERS = {
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
         "AppleWebKit/537.36 (KHTML, like Gecko) "
         "Chrome/123.0.0.0 Safari/537.36 "
-        "(check-flink/1.0; +https://github.com/willow-god/check-flink)"
+        "(check-flink/2.0; +https://github.com/willow-god/check-flink)"
     ),
     "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
     "Accept-Language": "zh-CN,zh;q=0.9",
@@ -39,21 +39,26 @@ RAW_HEADERS = {  # 仅用于获取原始数据，防止接收到Accept-Language�
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
         "AppleWebKit/537.36 (KHTML, like Gecko) "
         "Chrome/123.0.0.0 Safari/537.36 "
-        "(check-flink/1.0; +https://github.com/willow-god/check-flink)"
+        "(check-flink/2.0; +https://github.com/willow-god/check-flink)"
     ),
-    "X-Check-Flink": "1.0"
+    "X-Check-Flink": "2.0"
 }
 
 PROXY_URL_TEMPLATE = f"{os.getenv('PROXY_URL')}{{}}" if os.getenv("PROXY_URL") else None
-SOURCE_URL = os.getenv("SOURCE_URL", "./link.csv")  # 默认本地文件
+SOURCE_URL = os.getenv("SOURCE_URL", "https://blog.liushen.fun/flink_count.json")  # 默认本地文件
 RESULT_FILE = "./result.json"
+AUTHOR_URL = os.getenv("AUTHOR_URL", "blog.liushen.fun")  # 作者URL，用于检测反链
 api_request_queue = Queue()
 
 if PROXY_URL_TEMPLATE:
     logging.info("代理 URL 获取成功，代理协议: %s", PROXY_URL_TEMPLATE.split(":")[0])
-
 else:
     logging.info("未提供代理 URL")
+
+if AUTHOR_URL:
+    logging.info("作者 URL: %s", AUTHOR_URL)
+else:
+    logging.warning("未提供作者 URL，将跳过友链页面检测")
 
 def request_url(session, url, headers=HEADERS, desc="", timeout=15, verify=True, **kwargs):
     """统一封装的 GET 请求函数"""
@@ -81,6 +86,63 @@ def save_results(data):
 
 def is_url(path):
     return urlparse(path).scheme in ("http", "https")
+
+def check_author_link_in_page(session, linkpage_url):
+    """检测友链页面是否包含作者链接"""
+    if not AUTHOR_URL:
+        return False
+    
+    response, _ = request_url(session, linkpage_url, headers=RAW_HEADERS, desc="友链页面检测")
+    if not response:
+        return False
+    
+    # 处理作者URL，确保有协议号
+    author_url = AUTHOR_URL
+    if not author_url.startswith(('http://', 'https://')):
+        author_url = 'https://' + author_url
+    
+    # 生成各种可能的URL变体
+    author_variants = [
+        author_url,
+        author_url.replace('https://', 'http://'),
+        author_url.replace('https://', '//'),
+        author_url.replace('https://', ''),
+        AUTHOR_URL,  # 原始值（可能没有协议号）
+        '//' + AUTHOR_URL,
+        'https://' + AUTHOR_URL,
+        'http://' + AUTHOR_URL
+    ]
+    
+    # 去重
+    author_variants = list(set(author_variants))
+    
+    content = response.text
+    found_in_href = False
+    found_as_text = False
+    
+    # 检查每种变体
+    for variant in author_variants:
+        # 检查是否在href属性中
+        if f'href="{variant}"' in content or \
+           f"href='{variant}'" in content or \
+           f'href="{variant}/"' in content or \
+           f"href='{variant}/'" in content:
+            found_in_href = True
+            break
+        
+        # 检查是否作为文本出现
+        if variant in content:
+            found_as_text = True
+    
+    if found_in_href:
+        logging.info(f"友链页面 {linkpage_url} 中找到作者链接: {author_url}")
+        return True
+    elif found_as_text:
+        logging.info(f"友链页面 {linkpage_url} 中包含作者URL文本但非链接")
+        return True
+    else:
+        logging.info(f"友链页面 {linkpage_url} 中未找到作者链接")
+        return False
 
 def fetch_origin_data(origin_path):
     logging.info(f"正在读取数据源: {origin_path}")
@@ -110,13 +172,23 @@ def fetch_origin_data(origin_path):
     try:
         rows = list(csv.reader(content.splitlines()))
         logging.info("成功解析 CSV 格式数据")
-        return [{'name': row[0], 'link': row[1]} for row in rows if len(row) == 2]
+        # 支持新的CSV格式：name, link, linkpage
+        result = []
+        for row in rows:
+            if len(row) >= 2:
+                item = {'name': row[0], 'link': row[1]}
+                if len(row) >= 3 and row[2].strip():
+                    item['linkpage'] = row[2].strip()
+                result.append(item)
+        return result
     except Exception as e:
         logging.error(f"CSV 解析失败: {e}")
         return []
 
 def check_link(item, session):
     link = item['link']
+    has_author_link = False
+    
     for method, url in [("直接访问", link), ("代理访问", PROXY_URL_TEMPLATE.format(link) if PROXY_URL_TEMPLATE else None)]:
         if not url or not is_url(url):
             logging.warning(f"[{method}] 无效链接: {link}")
@@ -124,14 +196,19 @@ def check_link(item, session):
         response, latency = request_url(session, url, desc=method)
         if response and response.status_code == 200:
             logging.info(f"[{method}] 成功访问: {link} ，延迟 {latency} 秒")
-            return item, latency
+            
+            # 如果链接可达且有linkpage字段，检测友链页面
+            if 'linkpage' in item and item['linkpage'] and AUTHOR_URL:
+                has_author_link = check_author_link_in_page(session, item['linkpage'])
+            
+            return item, latency, has_author_link
         elif response and response.status_code != 200:
             logging.warning(f"[{method}] 状态码异常: {link} -> {response.status_code}")
         else:
             logging.warning(f"[{method}] 请求失败，Response 无效: {link}")
 
     api_request_queue.put(item)
-    return item, -1
+    return item, -1, False
 
 def handle_api_requests(session):
     results = []
@@ -140,13 +217,19 @@ def handle_api_requests(session):
         item = api_request_queue.get()
         link = item['link']
         api_url = f"https://v2.xxapi.cn/api/status?url={link}"
-        response, latency = request_url(session, api_url,headers=RAW_HEADERS, desc="API 检查", timeout=30)
+        response, latency = request_url(session, api_url, headers=RAW_HEADERS, desc="API 检查", timeout=30)
+        has_author_link = False
+        
         if response:
             try:
                 res_json = response.json()
                 if int(res_json.get("code")) == 200 and int(res_json.get("data")) == 200:
                     logging.info(f"[API] 成功访问: {link} ，状态码 200")
                     item['latency'] = latency
+                    
+                    # 如果API检测成功且有linkpage字段，检测友链页面
+                    if 'linkpage' in item and item['linkpage'] and AUTHOR_URL:
+                        has_author_link = check_author_link_in_page(session, item['linkpage'])
                 else:
                     logging.warning(f"[API] 状态异常: {link} -> [{res_json.get('code')}, {res_json.get('data')}]")
                     item['latency'] = -1
@@ -155,7 +238,8 @@ def handle_api_requests(session):
                 item['latency'] = -1
         else:
             item['latency'] = -1
-        results.append(item)
+        
+        results.append((item, item.get('latency', -1), has_author_link))
     return results
 
 def main():
@@ -173,15 +257,15 @@ def main():
 
             updated_api_results = handle_api_requests(session)
             for updated_item in updated_api_results:
-                for idx, (item, latency) in enumerate(results):
-                    if item['link'] == updated_item['link']:
-                        results[idx] = (item, updated_item['latency'])
+                for idx, (item, latency, has_author) in enumerate(results):
+                    if item['link'] == updated_item[0]['link']:
+                        results[idx] = updated_item
                         break
 
         current_links = {item['link'] for item in link_list}
         link_status = []
 
-        for item, latency in results:
+        for item, latency, has_author_link in results:
             try:
                 name = item.get('name', '未知')
                 link = item.get('link')
@@ -197,7 +281,9 @@ def main():
                     'name': name,
                     'link': link,
                     'latency': latency,
-                    'fail_count': fail_count
+                    'fail_count': fail_count,
+                    'has_author_link': has_author_link,  # 新增字段
+                    'linkpage': item.get('linkpage', '')  # 保留linkpage信息
                 })
             except Exception as e:
                 logging.error(f"处理链接时发生错误: {item}, 错误: {e}")
@@ -205,17 +291,21 @@ def main():
         link_status = [entry for entry in link_status if entry["link"] in current_links]
 
         accessible = sum(1 for x in link_status if x["latency"] != -1)
+        has_author_count = sum(1 for x in link_status if x["has_author_link"])
         total = len(link_status)
         output = {
             "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             "accessible_count": accessible,
             "inaccessible_count": total - accessible,
             "total_count": total,
+            "has_author_link_count": has_author_count,  # 新增统计
+            "author_url": AUTHOR_URL,  # 记录使用的作者URL
             "link_status": link_status
         }
 
         save_results(output)
         logging.info(f"共检查 {total} 个链接，成功 {accessible} 个，失败 {total - accessible} 个")
+        logging.info(f"其中 {has_author_count} 个友链页面包含作者链接")
         logging.info(f"结果已保存至: {RESULT_FILE}")
     except Exception as e:
         logging.exception(f"运行主程序失败: {e}")

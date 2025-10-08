@@ -157,7 +157,6 @@
         border-radius: 8px;
         padding: 15px;
         box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
-        text-align: center;
         font-size: 1rem;
         justify-content: space-between;
         align-items: center;
@@ -178,6 +177,8 @@
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
+        flex: 1;
+        margin-right: 10px;
       }
 
       .status-link:hover {
@@ -243,6 +244,37 @@
 
       .status-error::before {
         background-color: rgba(255, 0, 0, 0.2);
+      }
+
+      /* 新增反链状态样式 */
+      .backlink-status {
+        display: inline-flex;
+        align-items: center;
+        margin: 0 8px;
+        text-decoration: none;
+        transition: all 0.2s ease-in-out;
+      }
+
+      .backlink-status:hover {
+        transform: scale(1.1);
+      }
+
+      .backlink-icon {
+        font-size: 16px;
+      }
+
+      .backlink-true {
+        color: #27ae60;
+      }
+
+      .backlink-false {
+        color: #e74c3c;
+      }
+
+      .status-indicators {
+        display: flex;
+        align-items: center;
+        gap: 8px;
       }
 
       footer {
@@ -351,17 +383,17 @@
         </div>
         <div class="total-status-card">
           <div class="total-status-card-title">
-            <i class="fa-solid fa-circle-exclamation"></i>
-            <span>慢速友链</span>
-          </div>
-          <span id="slow-links">加载中...</span>
-        </div>
-        <div class="total-status-card">
-          <div class="total-status-card-title">
             <i class="fa-solid fa-circle-xmark"></i>
             <span>错误友链</span>
           </div>
           <span id="error-links">加载中...</span>
+        </div>
+        <div class="total-status-card">
+          <div class="total-status-card-title">
+            <i class="fa-solid fa-link"></i>
+            <span>存在反链</span>
+          </div>
+          <span id="backlink-count">加载中...</span>
         </div>
       </section>
 
@@ -476,6 +508,7 @@
           let normalLinks = 0;
           let slowLinks = 0;
           let errorLinks = 0;
+          let backlinkCount = 0;
           let errorLinksHTML = "";
           let otherLinksHTML = "";
 
@@ -483,30 +516,56 @@
             totalLinks++;
             let statusClass = "status-normal";
             let extraInfo = "";
+            let backlinkIcon = "";
+
+            // --- 修改点 1: 增加对 linkpage 是否为空字符串的检查 ---
+            // 处理反链状态
+            if (link.linkpage && link.linkpage.trim() !== '' && link.has_author_link !== undefined) {
+              if (link.has_author_link) {
+                backlinkIcon = `<a href="${link.linkpage}" target="_blank" rel="noopener noreferrer" class="backlink-status" title="查看友链页面">
+                                  <i class="fa-solid fa-heart-circle-check backlink-icon backlink-true"></i>
+                                </a>`;
+                backlinkCount++;
+              } else {
+                backlinkIcon = `<a href="${link.linkpage}" target="_blank" rel="noopener noreferrer" class="backlink-status" title="查看友链页面">
+                                  <i class="fa-solid fa-heart-circle-xmark backlink-icon backlink-false"></i>
+                                </a>`;
+              }
+            }
 
             if (link.latency === -1) {
               statusClass = "status-error";
               errorLinks++;
               extraInfo = `<span class="fail_counts">已持续${link.fail_count}次</span>`;
+              // --- 修改点 2: 调整图标顺序 ---
               errorLinksHTML += `<div class="status-card">
                             <a class="status-link" href="${link.link}" target="_blank" rel="noopener noreferrer noreferrer">${link.name}</a>
-                            <div class="fail-details">
+                            <div class="status-indicators">
                                 ${extraInfo}
+                                ${backlinkIcon}
                                 <span class="status-dot ${statusClass}"></span>
                             </div>
                         </div>`;
             } else if (link.latency > 4) {
               statusClass = "status-slow";
               slowLinks++;
+              // --- 修改点 2: 调整图标顺序 ---
               otherLinksHTML += `<div class="status-card">
                         <a class="status-link" href="${link.link}" target="_blank" rel="noopener noreferrer noreferrer">${link.name}</a>
-                        <span class="status-dot ${statusClass}"></span>
+                        <div class="status-indicators">
+                            ${backlinkIcon}
+                            <span class="status-dot ${statusClass}"></span>
+                        </div>
                     </div>`;
             } else {
               normalLinks++;
+              // --- 修改点 2: 调整图标顺序 ---
               otherLinksHTML += `<div class="status-card">
                         <a class="status-link" href="${link.link}" target="_blank" rel="noopener noreferrer noreferrer">${link.name}</a>
-                        <span class="status-dot ${statusClass}"></span>
+                        <div class="status-indicators">
+                            ${backlinkIcon}
+                            <span class="status-dot ${statusClass}"></span>
+                        </div>
                     </div>`;
             }
           });
@@ -525,10 +584,12 @@
             container_other.innerHTML = otherLinksHTML;
           }
 
+          // 更新统计数据
           document.getElementById("total-links").textContent = totalLinks;
           document.getElementById("normal-links").textContent = normalLinks;
-          document.getElementById("slow-links").textContent = slowLinks;
+          // document.getElementById("slow-links").textContent = slowLinks;
           document.getElementById("error-links").textContent = errorLinks;
+          document.getElementById("backlink-count").textContent = backlinkCount;
         })
         .catch((error) => console.error("Error loading status:", error));
     </script>

@@ -64,6 +64,10 @@
 
 ### 3. 选择抓取方式
 
+该项目支持两种方式抓取友链数据，你可以根据自己的需求选择其中一种，可以通过在设置-仓库机密中添加变量来实现修改。
+
+![添加变量](./static/pic-doc/secret.png)
+
 #### （1）JSON（比较复杂，但是后续无需再在仓库中修改，等于维护一个在线友链列表，如果可以实现，强烈推荐）
 
 - 在变量中设置`SOURCE_URL`，链接填写`json`文件链接地址，比如：
@@ -82,18 +86,32 @@
         "link": "String",
         "avatar": "String",
         "descr": "String",
-        "siteshot": "String"
+        "siteshot": "String",
+        "linkpage": "String"
       },{
         "name": "String",
         "link": "String",
         "avatar": "String",
         "descr": "String",
-        "siteshot": "String"
+        "siteshot": "String",
+        "linkpage": "String"
       },
     ],
     "length": 100
   }
   ```
+
+- 如果其中头像和描述，网站截图信息缺失，无需担心，该检测并不使用这些信息，仅检查链接是否可访问。
+
+- name 为友链名称，用于显示在结果中。
+- link 为友链地址，用于检查是否可访问。
+- linkpage 为友链页面，用于检查是否存在反链，如果需要检测反链请在环境变量中添加`AUTHOR_URL`，填写作者网站域名，比如：
+
+  ```env
+  AUTHOR_URL=blog.liushen.fun
+  ```
+
+  直接写域名部分即可，无需协议头，比如：`blog.liushen.fun`
 
 - JSON 具体生成教程请看[详细教程](https://blog.liushen.fun/posts/c2262998/)。
 
@@ -108,10 +126,10 @@
 - 创建并修改 `link.csv` 中的内容，格式如下，请修改为你自己的数据：
 
   ```plaintext
-  清羽飞扬,https://blog.liushen.fun/
-  ChrisKim,https://www.zouht.com/
-  Akilar,https://akilar.top/
-  张洪Heo,https://blog.zhheo.com/
+  清羽飞扬,https://blog.liushen.fun/,https://blog.liushen.fun/link/
+  ChrisKim,https://www.zouht.com/,https://www.zouht.com/link-exchange
+  Akilar,https://akilar.top/,https://akilar.top/link/
+  张洪Heo,https://blog.zhheo.com/,https://blog.zhheo.com/link/
   ```
 
   本项目提供了示例数据，如果不清楚可以进行修改以匹配。
